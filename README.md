@@ -29,12 +29,7 @@ Chats and settings are kept. Turn it off in Settings > About.
 
 ## Releasing an update
 
-Bump `__version__` in `astra/__init__.py`, commit, then push a tag with the same number:
-
-    git tag v2.5.1
-    git push origin v2.5.1
-
-GitHub Actions builds `AstraNova-Setup.exe` on Windows and attaches it to a release. Every installed copy picks it
+Bump `__version__` in `astra/__init__.py` and push to `main`. That's all: GitHub Actions builds `AstraNova-Setup.exe` on Windows and attaches it to a release. Every installed copy picks it
 up on its own the next time it's opened.
 
 ## Privacy
