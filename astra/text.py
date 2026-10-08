@@ -1,3 +1,5 @@
+# Copyright (c) 2026 AIXENI (aixeni.xyz). All rights reserved. Proprietary, see LICENSE. Copying, modifying or redistributing any part of this file without written permission is prohibited.
+# AN-AIXENI-7f3c9e21
 """Text hygiene shared by every outgoing path (chat, messages, posts, bots, voice).
 
 Rule from the user: absolutely no em dashes. En dashes go too, except inside number ranges.

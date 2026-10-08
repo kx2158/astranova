@@ -1,3 +1,5 @@
+# Copyright (c) 2026 AIXENI (aixeni.xyz). All rights reserved. Proprietary, see LICENSE. Copying, modifying or redistributing any part of this file without written permission is prohibited.
+# AN-AIXENI-7f3c9e21
 """Discord Rich Presence: shows that you're in AstraNova on your Discord profile, only while you're actually using it
 (its window is in front, with a short grace period when you switch away), and without an elapsed-time counter.
 
@@ -42,12 +44,17 @@ class Presence:
         return op, json.loads(self.pipe.read(n) or b"{}")
 
     def _connect(self, client_id):
-        if sys.platform != "win32":
-            raise OSError("Rich Presence needs Windows")
         last = None
         for i in range(10):
             try:
-                self.pipe = open(rf"\\.\pipe\discord-ipc-{i}", "r+b", buffering=0)
+                if sys.platform == "win32":
+                    self.pipe = open(rf"\\.\pipe\discord-ipc-{i}", "r+b", buffering=0)
+                else:   # Mac: Discord listens on a socket in the temp folder
+                    import socket
+                    import tempfile
+                    sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                    sock.connect(os.path.join(os.environ.get("TMPDIR") or tempfile.gettempdir(), f"discord-ipc-{i}"))
+                    self.pipe = sock.makefile("rwb", buffering=0)
                 break
             except OSError as e:
                 last = e

@@ -1,3 +1,5 @@
+# Copyright (c) 2026 AIXENI (aixeni.xyz). All rights reserved. Proprietary, see LICENSE. Copying, modifying or redistributing any part of this file without written permission is prohibited.
+# AN-AIXENI-7f3c9e21
 """AstraNova's own browser (Playwright, Microsoft Edge or bundled Chromium) with a persistent profile, so logins
 survive restarts.
 
@@ -259,7 +261,7 @@ class BrowserService:
             kwargs["viewport"] = {"width": 1366, "height": 900}
         else:
             kwargs["no_viewport"] = True
-        channel = cfg.get("channel") or None
+        channel = _mac_channel(cfg.get("channel")) if sys.platform == "darwin" else (cfg.get("channel") or None)
         exts = _extension_dirs(cfg.get("extensions_dir"))
         if exts:  # branded Edge/Chrome ignore --load-extension, so extensions need Playwright's Chromium
             channel = "chromium"
@@ -272,7 +274,12 @@ class BrowserService:
             _kill_profile_browsers()
             time.sleep(1)
             kwargs["args"] = [a for a in kwargs["args"] if not a.startswith(("--load-extension", "--disable-extensions-except"))]
-            w.ctx = w.pw.chromium.launch_persistent_context(**kwargs)
+            try:
+                w.ctx = w.pw.chromium.launch_persistent_context(**kwargs)
+            except Exception as e:  # noqa: BLE001
+                if "Executable doesn't exist" not in str(e) or not _install_chromium():
+                    raise
+                w.ctx = w.pw.chromium.launch_persistent_context(**kwargs)
         w.ctx.set_default_timeout(15000)
         w.ctx.set_default_navigation_timeout(30000)
         w.ctx.add_init_script(STEALTH_JS)
@@ -636,3 +643,28 @@ def install_chromium():
     cmd = list(exe) if isinstance(exe, (tuple, list)) else [str(exe)]
     flags = 0x08000000 if sys.platform == "win32" else 0  # CREATE_NO_WINDOW
     subprocess.run(cmd + ["install", "chromium"], env=get_driver_env(), check=True, creationflags=flags)
+
+
+def _mac_channel(want):
+    """Mac: use whichever of Chrome / Edge is installed (Safari can't be automated this way)."""
+    apps = {"chrome": "Google Chrome.app", "msedge": "Microsoft Edge.app", "chrome-beta": "Google Chrome Beta.app"}
+    for ch in [want] + [c for c in apps if c != want]:
+        name = apps.get(ch or "")
+        if name and any(os.path.exists(os.path.join(d, name)) for d in ("/Applications", os.path.expanduser("~/Applications"))):
+            return ch
+    return None    # Playwright's own Chromium (downloaded on first use)
+
+
+def _install_chromium():
+    """No Chrome or Edge on this computer (some Macs): fetch Playwright's own Chromium once (about 150 MB)."""
+    try:
+        from playwright._impl._driver import compute_driver_executable, get_driver_env
+        drv = compute_driver_executable()
+        cmd = list(drv) if isinstance(drv, (tuple, list)) else [str(drv)]
+        services.emit({"type": "notify", "text": "Getting a browser for Astra (one time, about 150 MB)..."})
+        r = subprocess.run(cmd + ["install", "chromium"], env=get_driver_env(), capture_output=True, timeout=900,
+                           creationflags=0x08000000 if sys.platform == "win32" else 0)
+        return r.returncode == 0
+    except Exception as e:  # noqa: BLE001
+        services.db.log("browser", f"chromium install failed: {e}")
+        return False

@@ -1,3 +1,5 @@
+# Copyright (c) 2026 AIXENI (aixeni.xyz). All rights reserved. Proprietary, see LICENSE. Copying, modifying or redistributing any part of this file without written permission is prohibited.
+# AN-AIXENI-7f3c9e21
 """System tools: shell commands, files, media keys, system info, notifications, routines, emergency-stop hotkey."""
 import datetime
 import os
@@ -59,18 +61,17 @@ def _allowed(p):
         return False
 
 
-@tool("run_command", "Run a PowerShell command on the PC and return its output (installs, system settings, scripts, "
+@tool("run_command", ("Run a Terminal (zsh) command on the Mac" if sys.platform == "darwin" else "Run a PowerShell command on the PC") + " and return its output (installs, system settings, scripts, "
       "file operations). The user approves each command unless they turned that off.",
       {"command": {"type": "string"}, "reason": {"type": "string"}, "timeout": {"type": "integer"}},
       ["command", "reason"], label="Running command")
 def run_command(ctx, command, reason, timeout=120):
-    if not IS_WIN:
-        return "Only available on Windows."
     if services.config.get("control", "confirm_commands"):
         if not services.bridge.confirm("Run this command?", f"{reason}\n\n{command}"):
             return "DECLINED by the user."
-    p = subprocess.run(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", command],
-                       capture_output=True, text=True, timeout=min(int(timeout or 120), 1800),
+    shell = (["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", command] if IS_WIN
+             else ["/bin/zsh" if os.path.exists("/bin/zsh") else "/bin/sh", "-lc", command])   # Mac: Terminal's zsh
+    p = subprocess.run(shell, capture_output=True, text=True, timeout=min(int(timeout or 120), 1800),
                        creationflags=NO_WINDOW, encoding="utf-8", errors="replace")
     services.db.log("command", command[:400])
     out = (p.stdout or "").strip()
@@ -90,7 +91,7 @@ def open_path(ctx, path):
     if IS_WIN:
         os.startfile(target)  # noqa: S606
     else:
-        subprocess.Popen(["xdg-open", target])
+        subprocess.Popen(["open" if sys.platform == "darwin" else "xdg-open", target])
     return f"Opened {target}."
 
 

@@ -1,3 +1,5 @@
+# Copyright (c) 2026 AIXENI (aixeni.xyz). All rights reserved. Proprietary, see LICENSE. Copying, modifying or redistributing any part of this file without written permission is prohibited.
+# AN-AIXENI-7f3c9e21
 """Calendar: import calendars (.ics files, or the private iCal link from Google Calendar / Outlook / Apple), so
 Astra and Nova know what your day looks like. Also a small local calendar for things you tell them.
 

@@ -1,3 +1,5 @@
+# Copyright (c) 2026 AIXENI (aixeni.xyz). All rights reserved. Proprietary, see LICENSE. Copying, modifying or redistributing any part of this file without written permission is prohibited.
+# AN-AIXENI-7f3c9e21
 """What the PC can run: the graphics card and how much video memory (VRAM) it has, so AstraNova can pick a model
 that fits instead of one that spills into system RAM and crawls."""
 import re
@@ -22,6 +24,21 @@ def _nvidia():
         return best
     except Exception:  # noqa: BLE001
         return None
+
+
+def _mac():
+    """Apple Silicon (M1 and newer): graphics share the Mac's memory, and macOS lets them use about two thirds of
+    it. Intel Macs run the model on the processor."""
+    import platform
+    if platform.machine() != "arm64":
+        return {"name": "Intel Mac", "vram_gb": 0, "vendor": "integrated", "integrated": True}
+    try:
+        chip = subprocess.run(["sysctl", "-n", "machdep.cpu.brand_string"], capture_output=True, text=True,
+                              timeout=5).stdout.strip() or "Apple Silicon"
+    except Exception:  # noqa: BLE001
+        chip = "Apple Silicon"
+    usable = ram_gb() * (0.75 if ram_gb() >= 32 else 0.66) - 2    # leave room for macOS and your apps
+    return {"name": chip, "vram_gb": round(max(0, usable), 1), "vendor": "apple"}
 
 
 def _windows_registry():
@@ -75,7 +92,8 @@ INTEGRATED = re.compile(r"intel.*\b(uhd|iris|hd graphics)\b|intel\(r\) arc\(tm\)
 def gpu():
     """{"name", "vram_gb", "vendor"} of the biggest graphics card, or {"name": "", "vram_gb": 0} if unknown."""
     if "gpu" not in _cache:
-        _cache["gpu"] = _nvidia() or _windows_registry() or {"name": "", "vram_gb": 0, "vendor": ""}
+        _cache["gpu"] = (_mac() if sys.platform == "darwin" else None) or _nvidia() or _windows_registry() or \
+            {"name": "", "vram_gb": 0, "vendor": ""}
     return dict(_cache["gpu"])
 
 

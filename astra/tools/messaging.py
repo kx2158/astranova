@@ -1,3 +1,5 @@
+# Copyright (c) 2026 AIXENI (aixeni.xyz). All rights reserved. Proprietary, see LICENSE. Copying, modifying or redistributing any part of this file without written permission is prohibited.
+# AN-AIXENI-7f3c9e21
 """Send and read messages as YOU in desktop chat apps (Discord, Slack, WhatsApp, Telegram...).
 
 This drives the real apps on your PC (no self-bots, no API tokens): open the chat with the app's own quick

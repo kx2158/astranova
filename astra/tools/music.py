@@ -1,6 +1,9 @@
+# Copyright (c) 2026 AIXENI (aixeni.xyz). All rights reserved. Proprietary, see LICENSE. Copying, modifying or redistributing any part of this file without written permission is prohibited.
+# AN-AIXENI-7f3c9e21
 """Music: Spotify through its official Web API (playlists, search, playback, your taste) and Apple Music
 through its Windows app (Apple has no public desktop API)."""
 import os
+import sys
 import re
 import threading
 import time
@@ -184,7 +187,11 @@ def spotify_now_playing(ctx):
 
 
 def _open_uri(uri):
-    os.startfile(uri)  # noqa: S606  (opens in the Spotify app)
+    if sys.platform == "win32":
+        os.startfile(uri)  # noqa: S606  (opens in the Spotify app)
+    else:
+        import subprocess
+        subprocess.Popen(["open", uri])
 
 
 @tool("spotify_play", "Play something on Spotify: a song/artist/album/playlist by name, or a spotify: URI / link. "

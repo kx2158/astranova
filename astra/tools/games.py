@@ -1,3 +1,5 @@
+# Copyright (c) 2026 AIXENI (aixeni.xyz). All rights reserved. Proprietary, see LICENSE. Copying, modifying or redistributing any part of this file without written permission is prohibited.
+# AN-AIXENI-7f3c9e21
 """Your Steam and Epic Games libraries: list installed games and launch them (also remotely through the Discord or
 Telegram bot, but only when the message comes from the owner account)."""
 import difflib

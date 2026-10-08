@@ -1,3 +1,5 @@
+# Copyright (c) 2026 AIXENI (aixeni.xyz). All rights reserved. Proprietary, see LICENSE. Copying, modifying or redistributing any part of this file without written permission is prohibited.
+# AN-AIXENI-7f3c9e21
 """Model client. Default: local Ollama on your GPU. Optional: any OpenAI-compatible cloud API
 (OpenAI, OpenRouter, Groq, LM Studio...) for extra intelligence. Also handles screen vision.
 

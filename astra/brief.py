@@ -1,3 +1,5 @@
+# Copyright (c) 2026 AIXENI (aixeni.xyz). All rights reserved. Proprietary, see LICENSE. Copying, modifying or redistributing any part of this file without written permission is prohibited.
+# AN-AIXENI-7f3c9e21
 """Task brief: before acting on a real task, Astra writes down what you actually want (goal, apps, done-when,
 plan). The brief is pinned into every model step so long multi-app tasks stay on track. Small talk and quick
 questions skip it (no extra model call)."""

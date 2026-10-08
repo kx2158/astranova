@@ -1,3 +1,5 @@
+# Copyright (c) 2026 AIXENI (aixeni.xyz). All rights reserved. Proprietary, see LICENSE. Copying, modifying or redistributing any part of this file without written permission is prohibited.
+# AN-AIXENI-7f3c9e21
 """Personal context: a markdown document about you (imported from ChatGPT etc, edited by you or by Astra),
 plus the day journal used for "tell sam what happened to me today"."""
 import datetime

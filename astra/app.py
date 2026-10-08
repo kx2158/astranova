@@ -1,3 +1,5 @@
+# Copyright (c) 2026 AIXENI (aixeni.xyz). All rights reserved. Proprietary, see LICENSE. Copying, modifying or redistributing any part of this file without written permission is prohibited.
+# AN-AIXENI-7f3c9e21
 """JavaScript <-> Python API used by the UI (pywebview)."""
 import datetime
 import json
@@ -939,6 +941,8 @@ class Api:
     def stt_start(self, target="astra"):
         from . import stt
         c = stt.cfg()
+        if sys.platform == "darwin":     # Mac: its own dictation types straight into the focused message box
+            return {"mode": "mac"}
         if c["engine"] == "windows" and sys.platform == "win32":
             threading.Thread(target=stt.windows_voice_typing, daemon=True).start()
             return {"mode": "windows"}
@@ -1073,7 +1077,7 @@ def _open_path(p):
     if sys.platform == "win32":
         os.startfile(str(p))  # noqa: S606
     else:
-        subprocess.Popen(["xdg-open", str(p)])
+        subprocess.Popen(["open" if sys.platform == "darwin" else "xdg-open", str(p)])
 
 
 def _size_rank(name):

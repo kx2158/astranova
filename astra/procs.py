@@ -1,3 +1,5 @@
+# Copyright (c) 2026 AIXENI (aixeni.xyz). All rights reserved. Proprietary, see LICENSE. Copying, modifying or redistributing any part of this file without written permission is prohibited.
+# AN-AIXENI-7f3c9e21
 """When AstraNova ends, everything it started ends with it.
 
 Two layers:
@@ -131,7 +133,9 @@ def sweep(unload_models=True):
     root = str(app_dir()).lower()
     victims = []
     try:
-        victims += [c for c in psutil.Process(me).children(recursive=True) if _is_helper(c, dirs, root)]
+        kids = psutil.Process(me).children(recursive=True)
+        # Mac: apps you open are handed to macOS, never our children, so everything still under us is ours
+        victims += kids if sys.platform == "darwin" else [c for c in kids if _is_helper(c, dirs, root)]
     except Exception:  # noqa: BLE001
         pass
     for p in psutil.process_iter(["pid", "exe", "cmdline"]):

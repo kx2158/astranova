@@ -1,3 +1,5 @@
+# Copyright (c) 2026 AIXENI (aixeni.xyz). All rights reserved. Proprietary, see LICENSE. Copying, modifying or redistributing any part of this file without written permission is prohibited.
+# AN-AIXENI-7f3c9e21
 """Filesystem locations used by AstraNova."""
 import os
 import shutil
@@ -22,7 +24,10 @@ def _migrate(old: Path, new: Path):
 
 def app_dir() -> Path:
     """Private app data (settings, database, caches): %APPDATA%/AstraNova."""
-    base = Path(os.environ.get("APPDATA") or str(Path.home() / ".config"))
+    if sys.platform == "darwin":
+        base = Path.home() / "Library" / "Application Support"
+    else:
+        base = Path(os.environ.get("APPDATA") or str(Path.home() / ".config"))
     p = base / DATA_NAME
     p.mkdir(parents=True, exist_ok=True)
     return p

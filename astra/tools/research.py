@@ -1,3 +1,5 @@
+# Copyright (c) 2026 AIXENI (aixeni.xyz). All rights reserved. Proprietary, see LICENSE. Copying, modifying or redistributing any part of this file without written permission is prohibited.
+# AN-AIXENI-7f3c9e21
 """Research with notes: search several queries, read the best pages (plain HTTP first, the hidden browser when a
 page needs it), pull the important facts out of each page into structured notes, and keep a running list.
 

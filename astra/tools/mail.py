@@ -1,3 +1,5 @@
+# Copyright (c) 2026 AIXENI (aixeni.xyz). All rights reserved. Proprietary, see LICENSE. Copying, modifying or redistributing any part of this file without written permission is prohibited.
+# AN-AIXENI-7f3c9e21
 """Email for several accounts (e.g. two Google accounts + uni mail): send via SMTP, read via IMAP.
 
 Gmail / Google accounts: turn on 2-step verification, create an App password (myaccount.google.com/apppasswords)

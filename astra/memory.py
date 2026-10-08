@@ -1,3 +1,5 @@
+# Copyright (c) 2026 AIXENI (aixeni.xyz). All rights reserved. Proprietary, see LICENSE. Copying, modifying or redistributing any part of this file without written permission is prohibited.
+# AN-AIXENI-7f3c9e21
 """Active memory: after a chat turn, a quick background pass writes down lasting facts from what you said, and
 updates or removes memories that are now wrong ("I moved to Leeds" replaces "Lives in York"). The model can still
 call remember itself; this just makes sure nothing important slips through. Runs off the UI thread and never

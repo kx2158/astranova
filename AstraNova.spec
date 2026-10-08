@@ -76,7 +76,7 @@ def wanted(name):
     return runtime_module(name) and ".tests" not in name and ".test_" not in name
 
 
-extra = ["keyring.backends.Windows", "clr", "sounddevice", "_sounddevice_data", "_cffi_backend", "PIL.Image", "PIL.ImageDraw", "PIL.ImageFont", "PIL.ImageEnhance",
+extra = ["keyring.backends.Windows", "keyring.backends.macOS", "clr", "sounddevice", "_sounddevice_data", "_cffi_backend", "PIL.Image", "PIL.ImageDraw", "PIL.ImageFont", "PIL.ImageEnhance",
          "PIL.ImageFilter", "PIL.ImageOps", "PIL.ImageColor", "PIL.PngImagePlugin", "PIL.JpegImagePlugin",
          "PIL.WebPImagePlugin", "PIL.BmpImagePlugin", "PIL.GifImagePlugin", "PIL.TiffImagePlugin"]
 if sys.platform == "win32":
@@ -104,14 +104,33 @@ print("AstraNova: modules in bundle:", len(modules) - len(missing), "/", len(mod
       ("(missing from bytecode, using source fallback: " + ", ".join(missing) + ")") if missing else "")
 
 pyz = PYZ(a.pure)
+MAC = sys.platform == "darwin"
 exe = EXE(
     pyz,
     a.scripts,
     [],
     exclude_binaries=True,
     name=APP,
-    icon=os.path.join(ROOT, "assets", "astra.ico"),
+    icon=os.path.join(ROOT, "assets", "astra.png" if MAC else "astra.ico"),
     console=False,
     upx=False,
 )
 coll = COLLECT(exe, a.binaries, a.datas, name=APP, upx=False)
+if MAC:   # a real Mac app: AstraNova.app
+    from astra import __version__ as _ver
+    app = BUNDLE(  # noqa: F821
+        coll,
+        name="AstraNova.app",
+        icon=os.path.join(ROOT, "assets", "astra.png"),
+        bundle_identifier="xyz.aixeni.astranova",
+        version=_ver,
+        info_plist={
+            "CFBundleDisplayName": "AstraNova",
+            "CFBundleShortVersionString": _ver,
+            "LSMinimumSystemVersion": "12.0",
+            "NSHighResolutionCapable": True,
+            "NSMicrophoneUsageDescription": "AstraNova listens when you press the microphone button.",
+            "NSAppleEventsUsageDescription": "AstraNova opens apps and links for you.",
+            "NSAppTransportSecurity": {"NSAllowsLocalNetworking": True},
+        },
+    )

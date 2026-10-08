@@ -1,3 +1,5 @@
+# Copyright (c) 2026 AIXENI (aixeni.xyz). All rights reserved. Proprietary, see LICENSE. Copying, modifying or redistributing any part of this file without written permission is prohibited.
+# AN-AIXENI-7f3c9e21
 """Voice output. Runs on the CPU, so it doesn't compete with the language model for your GPU.
 
 engines:
@@ -94,6 +96,14 @@ def install_piper(voice, progress=lambda s: None):
 
 
 def windows_voices():
+    """The computer's own voices: Windows' voices, or on a Mac the ones in System Settings > Accessibility >
+    Spoken Content (download the "Premium" ones there for the most natural sound)."""
+    if sys.platform == "darwin":
+        try:
+            out = subprocess.run(["say", "-v", "?"], capture_output=True, text=True, timeout=10).stdout
+            return [re.split(r"\s{2,}", l.strip())[0] for l in out.splitlines() if l.strip()]
+        except Exception:  # noqa: BLE001
+            return []
     if sys.platform != "win32":
         return []
     ps = ("Add-Type -AssemblyName System.Speech; (New-Object System.Speech.Synthesis.SpeechSynthesizer)"
@@ -135,7 +145,7 @@ def speak(text, who="astra", force=False):
     if not force and not (cfg.get("enabled") and cfg.get(who, True)):
         return False
     t = speakable(text)
-    if not t or sys.platform != "win32":
+    if not t or sys.platform not in ("win32", "darwin"):
         return False
     stop()
     threading.Thread(target=_speak, args=(t, cfg), daemon=True).start()
@@ -147,7 +157,14 @@ def _speak(t, cfg):
     tmp.write(t)
     tmp.close()
     try:
-        if cfg.get("engine") == "piper" and piper_exe():
+        if sys.platform == "darwin":
+            voice = (cfg.get("voice") or "").strip()
+            rate = 175 + 18 * max(-10, min(int(cfg.get("rate") or 0), 10))
+            p = subprocess.Popen(["say", "-r", str(rate)] + (["-v", voice] if voice and voice in windows_voices() else [])
+                                 + ["-f", tmp.name])
+            _proc["p"] = p
+            p.wait(300)
+        elif cfg.get("engine") == "piper" and piper_exe():
             voice = cfg.get("voice") if cfg.get("voice") in PIPER_VOICES else "en_US-lessac-high"
             model = piper_dir() / f"{voice}.onnx"
             if not model.exists():

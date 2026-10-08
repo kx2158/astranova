@@ -1,4 +1,5 @@
 @echo off
+rem Copyright (c) 2026 AIXENI (aixeni.xyz). All rights reserved. Proprietary, see LICENSE. Copying, modifying or redistributing any part of this file without written permission is prohibited.
 setlocal EnableExtensions
 cd /d "%~dp0"
 if defined CI set "AN_NEUTRAL=1"

@@ -1,3 +1,5 @@
+# Copyright (c) 2026 AIXENI (aixeni.xyz). All rights reserved. Proprietary, see LICENSE. Copying, modifying or redistributing any part of this file without written permission is prohibited.
+# AN-AIXENI-7f3c9e21
 """Background loop: runs due routines (scheduled tasks and reminders) plus periodic jobs (mail watcher, calendar
 refresh, Nova's check-ins)."""
 import threading

@@ -1,3 +1,4 @@
+/* Copyright (c) 2026 AIXENI (aixeni.xyz). All rights reserved. Proprietary, see LICENSE. Copying, modifying or redistributing any part of this file without written permission is prohibited. AN-AIXENI-7f3c9e21 */
 "use strict";
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -1539,6 +1540,7 @@ async function sttToggle(target) {
   box.focus();
   const r = await api.stt_start(target);
   if (r && r.mode === "whisper") { sttTarget = target; btn.classList.add("busy"); }
+  if (r && r.mode === "mac") toast("Press the Fn (globe) key twice to talk. Your Mac types what you say right here.", { ms: 5000 });
 }
 $$(".mic").forEach(b => b.onclick = () => sttToggle(b.dataset.stt));
 addEventListener("keydown", e => {

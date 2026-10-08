@@ -1,3 +1,5 @@
+# Copyright (c) 2026 AIXENI (aixeni.xyz). All rights reserved. Proprietary, see LICENSE. Copying, modifying or redistributing any part of this file without written permission is prohibited.
+# AN-AIXENI-7f3c9e21
 """Tool registry. Each tool is a plain function exposed to the model with a JSON schema.
 
 modes: which agents may use a tool.
@@ -169,3 +171,20 @@ def load_all():
     from . import (agenda, browser, culture, desktop, discord_bot, discord_web, games, mail,  # noqa: F401
                    messaging, meta, music, personal, research, system, telegram_bot, university, web)
     from ..paths import is_public
+    _mark_windows_only()
+
+
+# Tools that drive Windows itself (app windows, the Windows game launchers, drive letters, media keys). On a Mac
+# they're hidden, so the model never tries them; everything else (chat, calendar, mail, web, browser, Spotify,
+# files, commands, bots) works the same.
+WINDOWS_ONLY_MODULES = {"astra.tools.desktop", "astra.tools.games"}
+WINDOWS_ONLY_TOOLS = {"media_key", "search_files", "disk_overview", "apple_music_search"}
+
+
+def _mark_windows_only():
+    import sys
+    if sys.platform == "win32":
+        return
+    for name, t in REGISTRY.items():
+        if t["fn"].__module__ in WINDOWS_ONLY_MODULES or name in WINDOWS_ONLY_TOOLS:
+            t["needs"] = lambda: "only available on Windows"

@@ -11,6 +11,16 @@ Discord bot that chats with your friends in public mode, with no personal detail
 
 ## For people installing it
 
+**Windows:** download `AstraNova-Setup.exe` from the latest release and run it.
+
+**Mac (Apple Silicon, M1 and newer):** download `AstraNova-macOS.dmg`, open it and drag AstraNova into
+Applications. The first time, macOS says it can't check the app (it isn't from the App Store): open
+System Settings > Privacy & Security, scroll down and click **Open Anyway**. On the Mac, AstraNova chats, plans,
+researches, handles mail, calendar, Spotify, files and Terminal commands; controlling other apps' windows is
+Windows-only for now. To talk instead of typing, press the Fn (globe) key twice.
+
+### Windows details
+
 Run `AstraNova-Setup.exe` and press Install. No admin rights, no Python, nothing else to set up. The first start
 installs a local AI engine and downloads the model once (or use a cloud model in Settings > Model).
 Uninstall from Windows Settings > Apps.
@@ -36,3 +46,9 @@ up on its own the next time it's opened.
 
 Everything stays on the PC that runs it: chats, memories and settings are in `%APPDATA%\AstraNova-Public`.
 Nothing personal from the developer is included.
+
+## License
+
+Copyright (c) 2026 AIXENI. All rights reserved. AstraNova is **not open source**: the code is public so you can
+see how it works, but copying, modifying, redistributing or reusing any part of it without written permission
+is prohibited. See [LICENSE](LICENSE).

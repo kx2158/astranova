@@ -1,3 +1,5 @@
+# Copyright (c) 2026 AIXENI (aixeni.xyz). All rights reserved. Proprietary, see LICENSE. Copying, modifying or redistributing any part of this file without written permission is prohibited.
+# AN-AIXENI-7f3c9e21
 """Web search and fast page reading (no browser window needed).
 
 Search tries several engines in turn, because any single one sometimes blocks automated requests (DuckDuckGo

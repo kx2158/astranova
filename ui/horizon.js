@@ -1,3 +1,4 @@
+/* Copyright (c) 2026 AIXENI (aixeni.xyz). All rights reserved. Proprietary, see LICENSE. Copying, modifying or redistributing any part of this file without written permission is prohibited. AN-AIXENI-7f3c9e21 */
 "use strict";
 /* Horizon background: the sea and Astra's flare from Astra: Zenith, made light enough to sit behind the app.
    One small WebGL2 canvas rendered at reduced resolution and at most 30 fps, paused when the window is hidden.

@@ -1,3 +1,5 @@
+# Copyright (c) 2026 AIXENI (aixeni.xyz). All rights reserved. Proprietary, see LICENSE. Copying, modifying or redistributing any part of this file without written permission is prohibited.
+# AN-AIXENI-7f3c9e21
 """Desktop control for any Windows app.
 
 Primary path: Windows UI Automation (pywinauto). read_window lists an app's controls with [numbers]; the model

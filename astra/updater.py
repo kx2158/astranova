@@ -1,3 +1,5 @@
+# Copyright (c) 2026 AIXENI (aixeni.xyz). All rights reserved. Proprietary, see LICENSE. Copying, modifying or redistributing any part of this file without written permission is prohibited.
+# AN-AIXENI-7f3c9e21
 """Keeps the public edition up to date on its own.
 
 A while after AstraNova opens (and every few hours while it runs) it quietly looks for a newer release. If there is
@@ -21,7 +23,7 @@ from . import __version__, services
 from .paths import is_public
 
 _K = (107, 120, 50, 49, 53, 56, 47, 97, 115, 116, 114, 97, 110, 111, 118, 97)
-ASSET = "AstraNova-Setup.exe"
+ASSET = "AstraNova-macOS.zip" if sys.platform == "darwin" else "AstraNova-Setup.exe"
 _state = {"status": "idle", "version": "", "file": "", "error": "", "checked": 0}
 _lock = threading.Lock()
 
@@ -116,6 +118,8 @@ def _launch(relaunch):
     f = _state.get("file") or ""
     if _state.get("status") != "ready" or not f or not Path(f).exists():
         return False
+    if sys.platform == "darwin":
+        return _launch_mac(f, relaunch)
     args = [f, "--quiet"] + (["--relaunch"] if relaunch else [])
     base = 0x00000008 | 0x00000200          # DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP
     for flags in (base | 0x01000000, base):  # try to break away from any job first
@@ -126,6 +130,28 @@ def _launch(relaunch):
         except OSError:
             continue
     return False
+
+
+def _launch_mac(zip_path, relaunch):
+    """Mac: once AstraNova has quit, swap AstraNova.app for the new one (and open it again on restart)."""
+    app = Path(sys.executable).resolve().parents[2]          # .../AstraNova.app/Contents/MacOS/AstraNova
+    if app.suffix != ".app":
+        return False
+    script = _folder() / "swap.sh"
+    q = lambda p: "'" + str(p).replace("'", "'\\''") + "'"   # noqa: E731
+    script.write_text(
+        "#!/bin/sh\n"
+        f"while kill -0 {os.getpid()} 2>/dev/null; do sleep 0.5; done\n"
+        f"rm -rf {q(app)}.new && mkdir -p {q(app)}.new && ditto -x -k {q(zip_path)} {q(app)}.new || exit 1\n"
+        f"[ -d {q(app)}.new/AstraNova.app ] || exit 1\n"
+        f"rm -rf {q(app)}.old; mv {q(app)} {q(app)}.old && mv {q(app)}.new/AstraNova.app {q(app)} && "
+        f"rm -rf {q(app)}.old {q(app)}.new\n"
+        f"xattr -dr com.apple.quarantine {q(app)} 2>/dev/null\n"
+        + (f"open {q(app)} --args --updated\n" if relaunch else ""), encoding="utf-8")
+    subprocess.Popen(["/bin/sh", str(script)], start_new_session=True, close_fds=True,
+                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    _state["status"] = "installing"
+    return True
 
 
 def install_on_exit():

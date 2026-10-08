@@ -1,7 +1,8 @@
 name: Release
 
 # A new release is built whenever the version in astra/__init__.py changes on main
-# (or a v* tag is pushed, or it's started by hand). Installed copies pick it up on their own.
+# (or a v* tag is pushed, or it's started by hand): the Windows installer and the Mac app.
+# Installed copies pick it up on their own.
 on:
   push:
     branches: [main]
@@ -12,23 +13,18 @@ permissions:
   contents: write
 
 jobs:
-  build:
-    runs-on: windows-latest
-    timeout-minutes: 60
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      v: ${{ steps.ver.outputs.v }}
+      build: ${{ steps.ver.outputs.build }}
     steps:
       - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Is this a new version?
-        id: ver
-        shell: bash
+      - id: ver
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          v=$(python -c "import astra; print(astra.__version__)")
+          v=$(python3 -c "import re;print(re.search(r'__version__ = \"(.+?)\"', open('astra/__init__.py').read()).group(1))")
           echo "v=$v" >> "$GITHUB_OUTPUT"
           if [[ "$GITHUB_REF" == refs/tags/* && "${GITHUB_REF_NAME#v}" != "$v" ]]; then
             echo "astra/__init__.py says $v but the tag is $GITHUB_REF_NAME"; exit 1
@@ -40,23 +36,68 @@ jobs:
             echo "build=yes" >> "$GITHUB_OUTPUT"
           fi
 
+  windows:
+    needs: version
+    if: needs.version.outputs.build == 'yes'
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
       - name: Build the installer
-        if: steps.ver.outputs.build == 'yes'
         shell: cmd
         env:
           CI: "1"
         run: call build_installer.bat
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: |
+            release/AstraNova-Setup.exe
+            release/AstraNova-*.zip
 
+  mac:
+    needs: version
+    if: needs.version.outputs.build == 'yes'
+    runs-on: macos-latest          # Apple Silicon (M1 and newer)
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build the Mac app
+        env:
+          PYTHON: python
+        run: sh build_mac.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mac
+          path: |
+            release/AstraNova-macOS.zip
+            release/AstraNova-macOS.dmg
+
+  release:
+    needs: [version, windows, mac]
+    if: always() && needs.version.outputs.build == 'yes' && needs.windows.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: out
+          merge-multiple: true
       - name: Publish the release
-        if: steps.ver.outputs.build == 'yes'
-        shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          v="${{ steps.ver.outputs.v }}"
+          v="${{ needs.version.outputs.v }}"
+          ls -la out
+          files=$(ls out/*)
           if gh release view "v$v" >/dev/null 2>&1; then
-            gh release upload "v$v" release/AstraNova-Setup.exe "release/AstraNova-$v.zip" --clobber
+            gh release upload "v$v" $files --clobber
           else
-            gh release create "v$v" release/AstraNova-Setup.exe "release/AstraNova-$v.zip" \
-              --target "$GITHUB_SHA" --title "AstraNova $v" --generate-notes
+            gh release create "v$v" $files --target "$GITHUB_SHA" --title "AstraNova $v" --generate-notes
           fi

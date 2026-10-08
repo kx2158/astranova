@@ -1,3 +1,5 @@
+# Copyright (c) 2026 AIXENI (aixeni.xyz). All rights reserved. Proprietary, see LICENSE. Copying, modifying or redistributing any part of this file without written permission is prohibited.
+# AN-AIXENI-7f3c9e21
 """First-run setup: installs the local AI engine (Ollama), downloads the language + screen-vision models, checks
 the browser. With a cloud model selected, the engine and model downloads are skipped."""
 import os
@@ -17,10 +19,22 @@ OLLAMA_INSTALLER = "https://ollama.com/download/OllamaSetup.exe"
 NO_WINDOW = 0x08000000 if sys.platform == "win32" else 0
 
 
+OLLAMA_MAC = "https://ollama.com/download/Ollama-darwin.zip"
+MAC_APPS = (Path("/Applications"), Path.home() / "Applications")
+
+
 def find_ollama():
     exe = shutil.which("ollama")
     if exe:
         return exe
+    if sys.platform == "darwin":
+        for d in MAC_APPS:
+            p = d / "Ollama.app" / "Contents" / "Resources" / "ollama"
+            if p.exists():
+                return str(p)
+        for p in (Path("/opt/homebrew/bin/ollama"), Path("/usr/local/bin/ollama")):
+            if p.exists():
+                return str(p)
     for base in (os.environ.get("LOCALAPPDATA", ""), os.environ.get("ProgramFiles", "")):
         for p in (Path(base) / "Programs" / "Ollama" / "ollama.exe", Path(base) / "Ollama" / "ollama.exe"):
             if p.exists():
@@ -58,6 +72,18 @@ def start_engine():
             return True
         time.sleep(0.5)
     return ollama_up()
+
+
+def _install_ollama_mac(emit):
+    """Mac: put Ollama.app into ~/Applications (no password needed) and use its built-in engine."""
+    dest = Path(tempfile.gettempdir()) / "Ollama-darwin.zip"
+    _download(OLLAMA_MAC, dest, emit, "engine")
+    emit({"type": "setup", "step": "engine", "status": "Installing AI engine", "progress": None})
+    target = Path.home() / "Applications"
+    target.mkdir(exist_ok=True)
+    subprocess.run(["ditto", "-x", "-k", str(dest), str(target)], check=False)   # keeps the app's permissions
+    subprocess.run(["xattr", "-dr", "com.apple.quarantine", str(target / "Ollama.app")], check=False)
+    dest.unlink(missing_ok=True)
 
 
 def _download(url, dest, emit, step):
@@ -166,8 +192,11 @@ def run(emit):
         emit({"type": "setup", "step": "engine", "status": "Checking AI engine", "progress": None})
         if not cloud:
             if not ollama_up() and not find_ollama():
-                if sys.platform != "win32":
+                if sys.platform == "darwin":
+                    _install_ollama_mac(emit)
+                elif sys.platform != "win32":
                     raise RuntimeError("Please install Ollama from https://ollama.com and restart Astra.")
+            if not ollama_up() and not find_ollama() and sys.platform == "win32":
                 dest = Path(tempfile.gettempdir()) / "OllamaSetup.exe"
                 _download(OLLAMA_INSTALLER, dest, emit, "engine")
                 emit({"type": "setup", "step": "engine", "status": "Installing AI engine", "progress": None})

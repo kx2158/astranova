@@ -1,3 +1,5 @@
+# Copyright (c) 2026 AIXENI (aixeni.xyz). All rights reserved. Proprietary, see LICENSE. Copying, modifying or redistributing any part of this file without written permission is prohibited.
+# AN-AIXENI-7f3c9e21
 """Nova texting first: now and then (never spammy) Nova sends you a message on her own - a heads-up before
 something in your calendar, a ping about important mail (uni stuff etc.), a "how was your day" in the evening,
 or a follow-up on something you told her. Quiet hours and a daily limit keep it human."""

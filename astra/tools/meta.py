@@ -1,3 +1,5 @@
+# Copyright (c) 2026 AIXENI (aixeni.xyz). All rights reserved. Proprietary, see LICENSE. Copying, modifying or redistributing any part of this file without written permission is prohibited.
+# AN-AIXENI-7f3c9e21
 """enable_tools: lets Astra switch on extra tool groups mid-task (keeps the local model's prompt small)."""
 from ..paths import is_public
 from . import GROUP_INFO, tool
