@@ -111,6 +111,8 @@ if not exist "dist\AstraNova\AstraNova.exe" (
   goto :fail
 )
 if defined CI goto :skipselftest
+call :sign "dist\AstraNova\AstraNova.exe"
+if errorlevel 1 goto :fail
 start "" /wait "dist\AstraNova\AstraNova.exe" --selftest
 set "ST=%errorlevel%"
 if exist "dist\AstraNova\selftest.txt" type "dist\AstraNova\selftest.txt"
@@ -127,8 +129,12 @@ rem 5. Installer: a small uninstaller goes inside the app, then the setup carrie
 rem ---------------------------------------------------------------------------
 echo [5/6] Building the installer...
 "%VPY%" -c "import astra; open('build/version.txt','w').write(astra.__version__)"
-"%VPY%" -m PyInstaller --noconfirm --onefile --windowed --name uninstall --icon "%~dp0assets\astra.ico" --distpath build\uninst --workpath build\uninst-work --specpath build ^
+"%VPY%" installer\make_version_info.py build\version_setup.txt "AstraNova Setup" >nul
+"%VPY%" installer\make_version_info.py build\version_uninst.txt "AstraNova Uninstaller" >nul
+"%VPY%" -m PyInstaller --noconfirm --onefile --windowed --name uninstall --icon "%~dp0assets\astra.ico" --version-file "%~dp0build\version_uninst.txt" --distpath build\uninst --workpath build\uninst-work --specpath build ^
   --add-data "%~dp0installer\setup.html;." --add-data "%~dp0build\version.txt;." --hidden-import webview installer\setup_app.py
+if errorlevel 1 goto :fail
+call :sign "build\uninst\uninstall.exe"
 if errorlevel 1 goto :fail
 copy /y "build\uninst\uninstall.exe" "dist\AstraNova\uninstall.exe" >nul
 echo Packing the app...
@@ -137,8 +143,11 @@ if errorlevel 1 goto :fail
 rem A small picture shows straight away while the onefile setup unpacks itself, so it never looks frozen.
 set "SPLASH="
 "%VPY%" -c "import tkinter" >nul 2>nul && set "SPLASH=--splash "%~dp0assets\setup-splash.png""
-"%VPY%" -m PyInstaller --noconfirm --onefile --windowed %SPLASH% --name AstraNova-Setup --icon "%~dp0assets\astra.ico" --distpath release --workpath build\setup-work --specpath build ^
+"%VPY%" -m PyInstaller --noconfirm --onefile --windowed %SPLASH% --name AstraNova-Setup --icon "%~dp0assets\astra.ico" --version-file "%~dp0build\version_setup.txt" --distpath release --workpath build\setup-work --specpath build ^
   --add-data "%~dp0installer\setup.html;." --add-data "%~dp0build\version.txt;." --add-data "%~dp0build\payload.zip;." --hidden-import webview installer\setup_app.py
+if errorlevel 1 goto :fail
+
+call :sign "release\AstraNova-Setup.exe"
 if errorlevel 1 goto :fail
 
 rem ---------------------------------------------------------------------------
@@ -155,6 +164,19 @@ echo   To share:  the AstraNova zip in the release folder
 if defined CI exit /b 0
 explorer release
 pause
+exit /b 0
+
+:sign
+rem Signs a program as AIXENI when a code-signing certificate is set up (GitHub secrets SIGN_PFX + SIGN_PFX_PASSWORD,
+rem or set SIGN_PFX to a .pfx file yourself). Without one this does nothing.
+if not defined SIGN_PFX exit /b 0
+set "SIGNTOOL="
+for /f "delims=" %%S in ('where signtool 2^>nul') do if not defined SIGNTOOL set "SIGNTOOL=%%S"
+if not defined SIGNTOOL for /f "delims=" %%S in ('where /r "%ProgramFiles(x86)%\Windows Kits\10\bin" signtool.exe 2^>nul ^| findstr /i "\\x64\\"') do set "SIGNTOOL=%%S"
+if not defined SIGNTOOL (echo signtool not found, skipping signing & exit /b 0)
+"%SIGNTOOL%" sign /f "%SIGN_PFX%" /p "%SIGN_PFX_PASSWORD%" /fd sha256 /tr http://timestamp.digicert.com /td sha256 /d "AstraNova" /du "https://aixeni.xyz/" "%~1"
+if errorlevel 1 (echo Signing %~1 failed & exit /b 1)
+echo   signed %~1
 exit /b 0
 
 :fail

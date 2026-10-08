@@ -105,6 +105,11 @@ print("AstraNova: modules in bundle:", len(modules) - len(missing), "/", len(mod
 
 pyz = PYZ(a.pure)
 MAC = sys.platform == "darwin"
+VERSION_INFO = None
+if not MAC:   # publisher AIXENI + copyright in the exe's Properties > Details
+    import subprocess as _sp
+    VERSION_INFO = os.path.join(ROOT, "build", "version_app.txt")
+    _sp.run([sys.executable, os.path.join(ROOT, "installer", "make_version_info.py"), VERSION_INFO, "AstraNova"], check=True)
 exe = EXE(
     pyz,
     a.scripts,
@@ -112,6 +117,7 @@ exe = EXE(
     exclude_binaries=True,
     name=APP,
     icon=os.path.join(ROOT, "assets", "astra.png" if MAC else "astra.ico"),
+    version=VERSION_INFO,
     console=False,
     upx=False,
 )
