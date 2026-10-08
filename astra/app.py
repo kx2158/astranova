@@ -113,6 +113,8 @@ class Api:
         services.scheduler.every("mail", lambda: max(3, int(services.config.get("mail", "check_minutes") or 10)) * 60,
                                  lambda: mail.check_new(services.companion.queue_mail), first_delay=45)
         services.scheduler.every("calendar", 30 * 60, agenda.refresh, first_delay=5)
+        from . import procs
+        services.scheduler.every("engine-speed", 30, procs.unthrottle_engine, first_delay=10)
         services.scheduler.every("nova", 60, services.companion.tick, first_delay=90)
         from . import memory as memmod
         services.scheduler.every("memory", 20 * 60, memmod.classify_pending, first_delay=120)
@@ -145,6 +147,21 @@ class Api:
             except Exception:
                 pass
         self._emit({"type": "engine", "up": ok, "warm": ok})
+        if ok and not services.llm.cloud():
+            self._check_fit()
+
+    def _check_fit(self):
+        """A model too big for this PC makes every reply crawl (laptops especially). Offer the setup that fits."""
+        rec, name = hardware.recommend(), services.config.get("model", "name")
+        if name == rec["model"]:
+            return
+        share = services.llm.gpu_share(name)
+        light = services.llm.light()
+        heavy = light and rec.get("light") and _size_rank(name) > _size_rank(rec["model"])
+        if heavy or (share is not None and share < 0.8):
+            self._emit({"type": "model_too_big", "model": name, "suggest": rec["model"],
+                        "text": (f"{name} is too heavy for this PC, so replies are slow. Click to switch to "
+                                 f"{rec['model']}, made for it (your chats stay).")})
 
     # ---- running agents -----------------------------------------------------------------
     def _register(self, cid, agent):
@@ -1057,3 +1074,10 @@ def _open_path(p):
         os.startfile(str(p))  # noqa: S606
     else:
         subprocess.Popen(["xdg-open", str(p)])
+
+
+def _size_rank(name):
+    """Rough model size from its tag (qwen3:14b -> 14), to compare against what fits."""
+    import re as _re
+    mt = _re.search(r"(\d+(?:\.\d+)?)b\b", name or "", _re.I)
+    return float(mt.group(1)) if mt else 0

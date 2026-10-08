@@ -608,6 +608,12 @@ const handlers = {
   conv_list_changed() { api.running_list().then(ids => { running.forEach(id => { if (!ids.includes(id) && id !== FRIEND) running.delete(id); }); ids.forEach(id => running.add(id)); refreshConvs(); }); },
   engine(e) { state.engine_up = e.up; setEngine(e.up ? (e.warm ? "ready" : "loading") : "off"); },
   notify(e) { toast(e.text); },
+  model_too_big(e) {
+    toast(e.text, { ms: 15000, onclick: async () => {
+      const r = await api.use_best_model(); state.config = r.config;
+      toast(`Switching to ${r.picked.model}. It downloads once, then replies get much quicker.`, { ms: 6000 });
+    } });
+  },
   update_ready(e) {
     state.update = { status: "ready", version: e.version }; renderUpdate();
     toast(`AstraNova ${e.version} is ready. It goes in when you close the app, or click to restart now.`, { ms: 9000, onclick: () => api.update_restart() });
@@ -807,7 +813,7 @@ function fillSettings() {
   $("#aStyle").value = c.assistant.style || "concise";
   // model
   setProvider(c.model.provider || "ollama", false);
-  $("#mThink").checked = !!c.model.think; $("#mKeep").value = c.model.keep_alive || "10m"; $("#mCtx").value = String(c.model.num_ctx);
+  $("#mThink").checked = !!c.model.think; $("#mKeep").value = c.model.keep_alive || "10m"; $("#mLight").value = c.model.light || "auto"; $("#mCtx").value = String(c.model.num_ctx);
   $("#mMaxCtx").value = c.model.auto_ctx === false ? "0" : String(c.model.max_ctx || 49152);
   $("#cBase").value = c.model.api_base || ""; $("#cModel").value = c.model.api_model || ""; $("#cVision").value = c.model.api_vision_model || "";
   const preset = [...$("#cPreset").options].find(o => o.value === c.model.api_base);
@@ -902,6 +908,7 @@ function renderModels() {
 }
 bindToggle("model", "think", $("#mThink"));
 bindToggle("model", "keep_alive", $("#mKeep"));
+bindToggle("model", "light", $("#mLight"));
 bindToggle("model", "num_ctx", $("#mCtx"), v => +v);
 $("#mMaxCtx").onchange = () => { const v = +$("#mMaxCtx").value; save("model", v ? { auto_ctx: true, max_ctx: v } : { auto_ctx: false }); };
 $("#lWelcome").onchange = () => save("ui", { welcome: $("#lWelcome").checked });

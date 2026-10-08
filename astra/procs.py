@@ -163,3 +163,39 @@ def sweep(unload_models=True):
         except Exception:  # noqa: BLE001
             pass
     return n
+
+
+def unthrottle_engine():
+    """Laptops: Windows' power saving ("EcoQoS") slows background programs right down, and the AI engine runs in
+    the background, so replies crawl, worst of all on battery. This opts the engine's processes out of it."""
+    if sys.platform != "win32":
+        return 0
+    try:
+        import ctypes
+        import psutil
+        from ctypes import wintypes
+
+        class STATE(ctypes.Structure):
+            _fields_ = [("Version", wintypes.ULONG), ("ControlMask", wintypes.ULONG), ("StateMask", wintypes.ULONG)]
+
+        k32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        k32.OpenProcess.restype = wintypes.HANDLE
+        st = STATE(1, 0x1, 0x0)       # control execution speed, and turn throttling off
+        n = 0
+        for p in psutil.process_iter(["pid", "name"]):
+            if (p.info.get("name") or "").lower() not in ("ollama.exe", "ollama_llama_server.exe", "llama-server.exe"):
+                continue
+            if p.pid in _unthrottled:
+                continue
+            h = k32.OpenProcess(0x0200, False, p.pid)     # PROCESS_SET_INFORMATION
+            if h:
+                if k32.SetProcessInformation(h, 4, ctypes.byref(st), ctypes.sizeof(st)):   # ProcessPowerThrottling
+                    _unthrottled.add(p.pid)
+                    n += 1
+                k32.CloseHandle(h)
+        return n
+    except Exception:  # noqa: BLE001
+        return 0
+
+
+_unthrottled = set()

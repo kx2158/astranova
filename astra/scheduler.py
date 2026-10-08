@@ -6,6 +6,9 @@ import time
 from . import services
 
 
+USES_MODEL = {"mail", "nova", "memory", "personalize"}
+
+
 class Scheduler:
     def __init__(self):
         self.thread = None
@@ -35,6 +38,8 @@ class Scheduler:
         now = time.time()
         self._watches(now)
         for job in self.jobs:
+            if job["name"] in USES_MODEL and services.llm.light() and services.llm.busy():
+                continue    # on a laptop the model does one thing at a time: your chat goes first
             if not job["running"] and now - job["last"] >= _secs(job["every"]):
                 job["last"] = now
                 job["running"] = True

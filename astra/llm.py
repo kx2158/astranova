@@ -152,6 +152,25 @@ def _tools_as_text(tools):
 class LLM:
     def __init__(self, config):
         self.config = config
+        self._fg = 0            # chats being answered right now (you're waiting on these)
+        self._fg_end = 0.0
+
+    # ---- light mode: the model runs on the processor (laptops) ---------------------
+    def light(self):
+        """'auto' (default) turns it on when there's no usable graphics card. Lean prompts that the engine can reuse
+        between messages, a compact window, and background jobs wait while you chat."""
+        if self.cloud():
+            return False
+        v = str(self.config.get("model", "light") or "auto")
+        if v in ("on", "off"):
+            return v == "on"
+        from .hardware import cpu_only
+        return bool(cpu_only())
+
+    def busy(self):
+        """Someone is waiting for a reply (or just got one and is likely typing the next message)."""
+        import time
+        return self._fg > 0 or time.time() - self._fg_end < 45
 
     # ---- provider ----------------------------------------------------------------
     def provider(self):
@@ -197,13 +216,28 @@ class LLM:
         """How long the model stays in the graphics card after the last message. Shorter = the GPU is free for
         games and other apps sooner, longer = the next reply starts faster."""
         v = str(self.config.get("model", "keep_alive") or "10m")
-        return -1 if v == "always" else v
+        if v == "always":
+            return -1
+        if self.light() and v in ("2m", "10m"):
+            return "30m"    # on the processor, loading the model again takes long; it only uses normal RAM
+        return v
 
     def loaded_models(self):
         try:
             return [m["name"] for m in requests.get(BASE + "/api/ps", timeout=4).json().get("models", [])]
         except Exception:  # noqa: BLE001
             return []
+
+    def gpu_share(self, name=None):
+        """How much of the loaded model sits in the graphics card (1.0 = all of it, 0 = all on the processor)."""
+        name = name or self.config.get("model", "name")
+        try:
+            for m in requests.get(BASE + "/api/ps", timeout=4).json().get("models", []):
+                if m.get("name") == name or m.get("model") == name:
+                    return (m.get("size_vram") or 0) / max(1, m.get("size") or 1)
+        except Exception:  # noqa: BLE001
+            pass
+        return None
 
     def is_loaded(self, name=None):
         name = name or self.config.get("model", "name")
@@ -264,16 +298,23 @@ class LLM:
     # ---- chat ----------------------------------------------------------------------
     def _options(self, num_ctx=None):
         m = self.config.get("model")
-        return {"num_ctx": int(num_ctx or m.get("num_ctx", 16384)), "temperature": float(m.get("temperature", 0.4))}
+        ctx = self.LIGHT_CTX if self.light() else int(num_ctx or m.get("num_ctx", 16384))
+        return {"num_ctx": ctx, "temperature": float(m.get("temperature", 0.4))}
 
     # ---- context window ------------------------------------------------------------
+    LIGHT_CTX = 8192    # one fixed window in light mode: changing it makes the engine reload the model
+
     def base_ctx(self):
+        if self.light():
+            return self.LIGHT_CTX
         return int(self.config.get("model", "num_ctx") or 16384)
 
     def max_ctx(self):
         m = self.config.get("model")
         if self.cloud():
             return 128000
+        if self.light():
+            return self.LIGHT_CTX
         if not m.get("auto_ctx", True):
             return self.base_ctx()
         return max(self.base_ctx(), int(m.get("max_ctx") or self.base_ctx()))
@@ -302,7 +343,14 @@ class LLM:
         """Streams a reply. Returns {'content': str, 'tool_calls': list, 'thinking': str}."""
         if self.cloud():
             return self._chat_openai(messages, tools, on_token, should_stop, temperature, fresh)
-        return self._chat_ollama(messages, tools, on_token, on_thinking, should_stop, think, temperature, num_ctx, fresh)
+        import time
+        self._fg += 1
+        try:
+            return self._chat_ollama(messages, tools, on_token, on_thinking, should_stop, think, temperature, num_ctx,
+                                     fresh)
+        finally:
+            self._fg -= 1
+            self._fg_end = time.time()
 
     def _chat_ollama(self, messages, tools, on_token, on_thinking, should_stop, think, temperature, num_ctx=None,
                      fresh=False):

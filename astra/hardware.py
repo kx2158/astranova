@@ -1,5 +1,6 @@
 """What the PC can run: the graphics card and how much video memory (VRAM) it has, so AstraNova can pick a model
 that fits instead of one that spills into system RAM and crawls."""
+import re
 import subprocess
 import sys
 
@@ -51,13 +52,24 @@ def _windows_registry():
                 except OSError:
                     continue
                 gb = int(size) / 1024 ** 3
-                if gb > 0.5 and (not best or gb > best["vram_gb"]):
+                if INTEGRATED.search(name):
+                    if not best:
+                        best = {"name": name, "vram_gb": 0, "vendor": "integrated", "integrated": True}
+                    continue
+                if gb > 0.5 and (not best or best.get("integrated") or gb > best["vram_gb"]):
                     vendor = "amd" if "amd" in name.lower() or "radeon" in name.lower() else (
                         "intel" if "intel" in name.lower() else "nvidia" if "nvidia" in name.lower() else "other")
                     best = {"name": name, "vram_gb": round(gb, 1), "vendor": vendor}
         return best
     except Exception:  # noqa: BLE001
         return None
+
+
+# graphics built into the processor (most laptops without a gaming GPU): they share normal RAM and Ollama runs the
+# model on the processor there, so they count as "no graphics card"
+INTEGRATED = re.compile(r"intel.*\b(uhd|iris|hd graphics)\b|intel\(r\) arc\(tm\) graphics$|\bradeon\(tm\) graphics$|"
+                        r"amd radeon graphics$|radeon vega|radeon\(tm\) \d{3}m\b|microsoft basic|virtual|vmware|parsec|citrix",
+                        re.I)
 
 
 def gpu():
@@ -67,6 +79,20 @@ def gpu():
     return dict(_cache["gpu"])
 
 
+def ram_gb():
+    try:
+        import psutil
+        return round(psutil.virtual_memory().total / 1024 ** 3)
+    except Exception:  # noqa: BLE001
+        return 16
+
+
+def cpu_only():
+    """True when the model will run on the processor: no graphics card, a built-in one, or one that's too small."""
+    g = gpu()
+    return g.get("integrated") or g.get("vram_gb", 0) < 3
+
+
 # ---- which model fits which card ------------------------------------------------------------------------------
 # tier: the smallest VRAM (GB) a setup is meant for. ctx = normal context, max_ctx = how far it may grow.
 TIERS = [
@@ -74,12 +100,13 @@ TIERS = [
     {"min": 15, "model": "qwen3:14b", "vision": "qwen2.5vl:7b", "ctx": 24576, "max_ctx": 49152, "loaded": 2},
     {"min": 11, "model": "qwen3:14b", "vision": "qwen2.5vl:3b", "ctx": 16384, "max_ctx": 24576, "loaded": 1},
     {"min": 7, "model": "qwen3:8b", "vision": "qwen2.5vl:3b", "ctx": 12288, "max_ctx": 16384, "loaded": 1},
-    {"min": 0, "model": "qwen3:4b", "vision": "qwen2.5vl:3b", "ctx": 8192, "max_ctx": 12288, "loaded": 1},
+    {"min": 3, "model": "qwen3:4b", "vision": "qwen2.5vl:3b", "ctx": 8192, "max_ctx": 12288, "loaded": 1},
+    # no usable graphics card (most laptops): a small, quick model, a compact window and lean prompts
+    {"min": 0, "model": "qwen3:4b", "vision": "qwen2.5vl:3b", "ctx": 8192, "max_ctx": 8192, "loaded": 1, "light": True},
 ]
 
 
 def recommend(vram_gb=None):
     v = gpu()["vram_gb"] if vram_gb is None else vram_gb
-    if not v:            # unknown card: assume a common 8 GB one, safe everywhere
-        v = 8
+    # unknown or built-in graphics: the light setup. A wrong guess upwards makes chats crawl on laptops.
     return next(dict(t) for t in TIERS if v >= t["min"])

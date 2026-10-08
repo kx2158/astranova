@@ -267,6 +267,16 @@ def repeated_bits(text, history):
 _STAMP_RE = re.compile(r"^\s*\[(?:mon|tue|wed|thu|fri|sat|sun)[a-z]* \d{1,2}:\d{2}\]\s*", re.I)
 
 
+def _with_details(msgs, details):
+    """Attach the changing details to the newest real user message (only for this request, never saved)."""
+    for i in range(len(msgs) - 1, 0, -1):
+        if msgs[i]["role"] == "user":
+            m = dict(msgs[i])
+            m["content"] = f"<details>\n{details}\n</details>\n\n" + (m.get("content") or "")
+            return msgs[:i] + [m] + msgs[i + 1:]
+    return msgs + [{"role": "user", "content": f"<details>\n{details}\n</details>"}]
+
+
 def _stamped(view):
     """Add [Mon 21:10] marks to user messages whenever time has moved on since the previous message."""
     out, last = [], None
@@ -444,14 +454,17 @@ class Agent:
             if self.handed:
                 note = (f"\nSYSTEM NOTE: you already handed this to astra (job: {self.handed[:300]}). its running in this "
                         "chat now. just tell them shes on it in one short text, dont make up results\n")
-            return FRIEND_PROMPT.format(
-                fname=f.get("name") or "Nova", name=name, personality=f.get("personality", ""), today=self._time,
-                about=p.get("about") or "(you'll learn as you go)", rule=STYLE_RULE, calendar=cal,
-                tasks=_tasks_block(), mail=_mail_block(),
-                summary=("EARLIER IN THIS CHAT (summary):\n" + summary) if summary else "",
-                context=pctx.for_prompt(limit // 2) + "\n" + _culture_block(),
-                memories=_mem_block(user_text, "THINGS YOU REMEMBER ABOUT THEM", 24),
-                recent=_recent_block(self._hist)) + note + _learned_style()
+            light = services.llm.light()
+            dyn = dict(today=self._time, calendar=cal, tasks=_tasks_block(), mail=_mail_block(),
+                       summary=("EARLIER IN THIS CHAT (summary):\n" + summary) if summary else "",
+                       context=pctx.for_prompt(limit // (3 if light else 2)) + ("" if light else "\n" + _culture_block()),
+                       memories=_mem_block(user_text, "THINGS YOU REMEMBER ABOUT THEM", 10 if light else 24),
+                       recent=_recent_block(self._hist))
+            base = dict(fname=f.get("name") or "Nova", name=name, personality=f.get("personality", ""),
+                        about=p.get("about") or "(you'll learn as you go)", rule=STYLE_RULE)
+            if light:
+                return self._split(FRIEND_PROMPT, base, dyn, note) + _learned_style()
+            return FRIEND_PROMPT.format(**base, **dyn) + note + _learned_style()
         if self.mode == "guest":
             f = cfg.get("friend")
             return GUEST_PROMPT.format(persona=f.get("name") or "Nova", personality=f.get("personality", ""),
@@ -465,11 +478,24 @@ class Agent:
             src += FROM_NOVA_NOTE.format(name=name)
         if summary:
             src += "EARLIER IN THIS CONVERSATION (summary):\n" + summary + "\n"
-        return ASTRA_PROMPT.format(
-            today=self._time, name=name, about=f" ({p['about']})" if p.get("about") else "",
-            blocked=cfg.get("control", "blocked_apps") or "none", style=style, source_note=src, calendar=cal,
-            memories=_mem_block(user_text), playbooks=playbooks.render(apps), rule=STYLE_RULE,
-            context=pctx.for_prompt(limit), brief=briefmod.render(brief, steps))
+        light = services.llm.light()
+        base = dict(name=name, about=f" ({p['about']})" if p.get("about") else "", rule=STYLE_RULE, style=style,
+                    blocked=cfg.get("control", "blocked_apps") or "none")
+        dyn = dict(today=self._time, source_note=src, calendar=cal, memories=_mem_block(user_text, limit=8 if light else 18),
+                   playbooks=playbooks.render(apps), context=pctx.for_prompt(limit // 2 if light else limit),
+                   brief=briefmod.render(brief, steps))
+        if light:
+            return self._split(ASTRA_PROMPT, base, dyn, "")
+        return ASTRA_PROMPT.format(**base, **dyn)
+
+    def _split(self, template, base, dyn, note):
+        """Light mode (model on the processor): the system prompt stays word-for-word the same from message to
+        message, so the engine reuses what it already read instead of reading thousands of words again. What
+        changes (time, calendar, memories, the task brief) rides along with the newest message instead."""
+        static = re.sub(r"\n{3,}", "\n\n", template.format(**base, **{k: "" for k in dyn}))
+        parts = [v.strip() for v in dyn.values() if v and v.strip()] + ([note.strip()] if note.strip() else [])
+        self._dynamic = "\n\n".join(parts)
+        return static + "\n(Up-to-date details, like the time, memories and calendar, come with the newest message.)"
 
     def _groups(self, brief, user_text, history):
         """Which tool groups a local model sees this run (cloud models: all)."""
@@ -635,8 +661,10 @@ class Agent:
                 num_ctx = llm.pick_ctx(need)
                 if num_ctx > llm.base_ctx() and not llm.cloud():
                     self._e(type="context", tokens=num_ctx)
-                budget = num_ctx * 3 - len(system) - len(json.dumps(schemas)) - 4000
-                msgs = [{"role": "system", "content": system}] + _trim(_stamped(view), max(budget, 12000))
+                budget = num_ctx * 3 - len(system) - len(json.dumps(schemas)) - 4000 - len(getattr(self, "_dynamic", "") if llm.light() else "")
+                msgs = [{"role": "system", "content": system}] + _trim(_stamped(view), max(budget, 5000 if llm.light() else 12000))
+                if getattr(self, "_dynamic", "") and llm.light():
+                    msgs = _with_details(msgs, self._dynamic)
                 if _step == 0 and not llm.cloud() and not llm.is_loaded():
                     self._e(type="phase", text="Loading the model into your graphics card")
                 self._e(type="assistant_start")

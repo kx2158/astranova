@@ -49,7 +49,8 @@ DEFAULTS = {
         "auto_ctx": True,                # grow the context window automatically for big tasks
         "max_ctx": 49152,                # upper limit for auto context (VRAM)
         "temperature": 0.4,
-        "keep_alive": "10m",             # free the graphics card after this long idle (2m | 10m | 30m | always)
+        "keep_alive": "10m",
+        "light": "auto",                 # light mode for PCs without a graphics card: auto | on | off             # free the graphics card after this long idle (2m | 10m | 30m | always)
         "api_base": "https://api.openai.com/v1",
         "api_model": "gpt-4.1-mini",
         "api_vision_model": "",          # empty = same as api_model

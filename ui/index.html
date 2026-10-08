@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AstraNova</title>
-<link rel="stylesheet" href="style.css?v=2.5.0">
+<link rel="stylesheet" href="style.css?v=2.5.1">
 </head>
 <body>
 <!-- shared star shapes -->
@@ -323,6 +323,7 @@
             <div id="localModels" class="localmodels"><p class="sub small">Loading</p></div>
             <div class="row"><button class="btn-ghost" id="mClean">Delete unused models</button></div>
             <label>Free the graphics card when idle<select id="mKeep"><option value="2m">After 2 minutes (best for gaming)</option><option value="10m">After 10 minutes (recommended)</option><option value="30m">After 30 minutes</option><option value="always">Keep the model loaded (fastest replies)</option></select></label>
+            <label>Laptop mode <span class="muted">for PCs without a graphics card: quicker replies</span><select id="mLight"><option value="auto">Automatic (on when there's no graphics card)</option><option value="on">Always on</option><option value="off">Off</option></select></label>
             <label class="toggle"><input type="checkbox" id="mThink"><span></span>Deep reasoning (slower, better for complex tasks)</label>
             <div class="grid2">
               <label>Normal context<select id="mCtx"><option value="8192">8K - small GPUs</option><option value="12288">12K - 8 GB GPUs</option><option value="16384">16K - fastest</option><option value="24576">24K - recommended</option><option value="32768">32K - more VRAM</option></select></label>
@@ -593,8 +594,8 @@
   </div>
 </div>
 
-<script src="sky.js?v=2.5.0"></script>
-<script src="horizon.js?v=2.5.0"></script>
-<script src="app.js?v=2.5.0"></script>
+<script src="sky.js?v=2.5.1"></script>
+<script src="horizon.js?v=2.5.1"></script>
+<script src="app.js?v=2.5.1"></script>
 </body>
 </html>
