@@ -1,0 +1,600 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AstraNova</title>
+<link rel="stylesheet" href="style.css?v=2.5.0">
+</head>
+<body>
+<!-- shared star shapes -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="star4" viewBox="0 0 24 24"><path d="M12 0C12.7 7.3 16.7 11.3 24 12C16.7 12.7 12.7 16.7 12 24C11.3 16.7 7.3 12.7 0 12C7.3 11.3 11.3 7.3 12 0Z"/></symbol>
+    <symbol id="star4s" viewBox="0 0 24 24"><path d="M12 1L13.5 10.5L23 12L13.5 13.5L12 23L10.5 13.5L1 12L10.5 10.5Z"/></symbol>
+    <symbol id="star8" viewBox="0 0 24 24"><path d="M12 0C12.6 8 16 11.4 24 12C16 12.6 12.6 16 12 24C11.4 16 8 12.6 0 12C8 11.4 11.4 8 12 0Z"/><path opacity=".55" d="M12 5.2L13.3 10.7L18.8 12L13.3 13.3L12 18.8L10.7 13.3L5.2 12L10.7 10.7Z" transform="rotate(45 12 12)"/></symbol>
+    <symbol id="orbit" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><ellipse cx="12" cy="12" rx="10.5" ry="4.4" fill="none" stroke="currentColor" stroke-width="1.3" transform="rotate(-24 12 12)"/></symbol>
+    <symbol id="moon" viewBox="0 0 24 24"><path d="M15.5 2.5A9.5 9.5 0 1 0 21.5 17A7.5 7.5 0 0 1 15.5 2.5Z"/></symbol>
+    <symbol id="comet" viewBox="0 0 24 24"><circle cx="17" cy="7" r="3.4"/><path d="M14.6 9.4L3 21" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity=".55"/><path d="M15.8 10.6L8 18.5" stroke="currentColor" stroke-width="1" stroke-linecap="round" opacity=".35"/></symbol>
+    <symbol id="house" viewBox="0 0 24 24"><path d="M3 11L12 3L21 11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 10V20H18V10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M12 12.2L12.6 14.4L14.8 15L12.6 15.6L12 17.8L11.4 15.6L9.2 15L11.4 14.4Z"/></symbol>
+    <symbol id="flare" viewBox="0 0 24 24"><path d="M12 2.5L12.9 11.1L21.5 12L12.9 12.9L12 21.5L11.1 12.9L2.5 12L11.1 11.1Z"/><rect x="0" y="11.55" width="24" height=".9" rx=".45" opacity=".6"/><circle cx="12" cy="12" r="2.3"/></symbol>
+    <symbol id="cal" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M3 10H21M8 3V7M16 3V7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+    <linearGradient id="gStroke" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#c4b5fd" stop-opacity=".9"/><stop offset=".5" stop-color="#a5b4fc" stop-opacity=".5"/><stop offset="1" stop-color="#f0abfc" stop-opacity=".8"/></linearGradient>
+  </defs>
+</svg>
+
+<canvas id="sky"></canvas>
+<canvas id="horizon" aria-hidden="true"></canvas>
+<div class="aurora" aria-hidden="true"><i class="b1"></i><i class="b2"></i><i class="b3"></i></div>
+
+<div id="app">
+  <aside id="rail" class="glass">
+    <div class="brand">
+      <span class="brand-star"><svg><use href="#flare"/></svg></span>
+      <span>ASTRANOVA</span>
+    </div>
+    <nav class="primary">
+      <button class="nav active" data-view="chat"><svg class="ic"><use href="#star4"/></svg>Astra</button>
+      <button class="nav" data-view="friend"><svg class="ic"><use href="#orbit"/></svg><span id="navFriend">Nova</span><b id="friendDot" class="ndot hidden"></b></button>
+    </nav>
+    <button id="newChat" class="newtask"><svg><use href="#star4s"/></svg>New task</button>
+    <div class="rail-label">Recent</div>
+    <nav id="convList"></nav>
+    <div class="rail-bottom">
+      <button id="panicBtn" class="panic hidden" title="Stop everything (Ctrl+Alt+X)"><svg><use href="#star4s"/></svg>Stop all<kbd>Ctrl Alt X</kbd></button>
+      <button class="nav sm" data-view="calendar"><svg class="ic"><use href="#cal"/></svg>Calendar</button>
+      <button class="nav sm" data-view="routines"><svg class="ic"><use href="#moon"/></svg>Routines</button>
+      <button class="nav sm" data-view="memory"><svg class="ic"><use href="#star4s"/></svg>Memory</button>
+      <button class="nav sm" data-view="activity"><svg class="ic"><use href="#comet"/></svg>Activity</button>
+      <button class="nav sm" data-view="settings"><svg class="ic"><use href="#star8"/></svg>Settings</button>
+      <div class="engine"><span id="engineDot" class="dot"></span><span id="engineText">Starting</span></div>
+    </div>
+  </aside>
+
+  <main id="main">
+    <!-- ASTRA CHAT -->
+    <section id="view-chat" class="view active">
+      <div id="thread">
+        <div id="empty" class="empty">
+          <div class="flare-wrap" id="drop"></div>
+          <h1 id="greeting">What should I do?</h1>
+          <p class="sub">I handle things on this PC and the web in the background: messages, email, your calendar, research, files and reminders.</p>
+          <div class="chips">
+            <button class="chip" data-text="Send sam on Discord: running 10 minutes late"><svg><use href="#star4"/></svg><b>Discord</b><span>Tell sam I'm running late</span></button>
+            <button class="chip" data-text="Research the best budget noise-cancelling headphones right now"><svg><use href="#star4"/></svg><b>Research</b><span>Compare headphones, with prices</span></button>
+            <button class="chip" data-text="What important emails did I get today?"><svg><use href="#star4"/></svg><b>Email</b><span>Today's important mail</span></button>
+            <button class="chip" data-text="What's on my calendar this week?"><svg><use href="#cal"/></svg><b>Calendar</b><span>My week at a glance</span></button>
+            <button class="chip" data-text="Tell alex about what happened to me today"><svg><use href="#star4"/></svg><b>Messages</b><span>Tell alex about my day</span></button>
+            <button class="chip" data-text="Every day at 18:00 remind me to take a break"><svg><use href="#moon"/></svg><b>Routine</b><span>Break reminder at 18:00</span></button>
+          </div>
+        </div>
+        <div id="messages"></div>
+      </div>
+      <div class="composer">
+        <div id="slash" class="slash glass hidden"></div>
+        <div class="composer-box glass">
+          <textarea id="input" rows="1" placeholder="Ask Astra anything · type / for commands"></textarea>
+          <button class="mic" data-stt="astra" title="Talk instead of typing (Ctrl+M)" aria-label="Speech to text"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+          <button id="sendBtn" class="send" title="Send (Enter)"><svg><use href="#star4"/></svg></button>
+          <button id="stopBtn" class="send stop hidden" title="Stop"><i></i></button>
+        </div>
+        <div class="hint">Enter to send · / for commands · Astra asks before sending messages · Ctrl+Alt+X stops everything</div>
+      </div>
+    </section>
+
+    <!-- FRIEND -->
+    <section id="view-friend" class="view">
+      <header class="friend-head">
+        <div class="orb big" id="friendAvatar"><span>N</span></div>
+        <div class="fh-text"><b id="friendName">Nova</b><small id="friendStatus">here</small></div>
+        <span class="moodchip hidden" id="moodChip" title="Mood ambience"><i></i><span></span></span>
+        <button class="btn-ghost sm" id="friendClear" title="Start over">Clear chat</button>
+      </header>
+      <div id="fthread">
+        <div id="fempty" class="empty friend-empty">
+          <div class="orb huge"><span id="fbigInitial">N</span></div>
+          <p class="sub" id="fintro">Talk about anything, she remembers. Ask for something that needs doing and Astra works on it right here in this chat.</p>
+        </div>
+        <div id="fmessages"></div>
+      </div>
+      <div class="composer">
+        <div class="composer-box glass">
+          <textarea id="finput" rows="1" placeholder="Message Nova"></textarea>
+          <button class="mic" data-stt="friend" title="Talk instead of typing (Ctrl+M)" aria-label="Speech to text"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+          <button id="fsendBtn" class="send" title="Send (Enter)"><svg><use href="#star4"/></svg></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- CALENDAR -->
+    <section id="view-calendar" class="view">
+      <div class="page wide">
+        <header class="page-head">
+          <div><div class="eyebrow"><svg><use href="#cal"/></svg>Calendar</div><h2 id="calTitle">This month</h2><p class="sub">Your imported calendars plus everything you tell Nova. She uses it to know your day and to give you a heads-up.</p></div>
+          <div class="cal-ctl">
+            <button class="btn-ghost sm" id="calPrev" title="Previous">‹</button>
+            <button class="btn-ghost sm" id="calToday">Today</button>
+            <button class="btn-ghost sm" id="calNext" title="Next">›</button>
+            <div class="seg sm" id="calMode"><button data-m="month" class="on">Month</button><button data-m="week">Week</button></div>
+            <button class="btn-ghost sm" id="calRefresh">Refresh</button>
+          </div>
+        </header>
+        <div class="cal-head" id="calDow"></div>
+        <div id="calGrid" class="month"></div>
+        <div class="dayview glass" id="calDay">
+          <div class="dv-head"><b id="dvTitle"></b><small id="dvSub"></small></div>
+          <div id="dvList"></div>
+          <div class="dv-add"><input id="dvName" placeholder="Add something on this day"><input id="dvTime" placeholder="14:00" maxlength="5"><select id="dvRepeat" title="Repeat"><option value="">Once</option><option value="weekly">Every week</option><option value="biweekly">Every 2 weeks</option><option value="daily">Every day</option><option value="weekdays">Weekdays</option><option value="monthly">Every month</option></select><button class="btn sm" id="dvAdd">Add</button></div>
+        </div>
+        <p class="sub small" id="calHint">Add calendars in Settings › Calendar.</p>
+      </div>
+    </section>
+
+    <!-- ROUTINES -->
+    <section id="view-routines" class="view">
+      <div class="page">
+        <header class="page-head">
+          <div><div class="eyebrow"><svg><use href="#moon"/></svg>Routines</div><h2>While you're away</h2><p class="sub">Reminders and tasks Astra runs by itself. Or just ask in chat: "every Friday at 20:00, post my stream schedule".</p></div>
+          <button id="addRoutine" class="btn">New routine</button>
+        </header>
+        <div id="routineForm" class="card glass hidden">
+          <input type="hidden" id="rId">
+          <label>What should Astra do<textarea id="rPrompt" rows="3" placeholder="Remind me to start the stream / Make a fresh playlist from my recent listening"></textarea></label>
+          <div class="grid3">
+            <label>Name<input id="rTitle" placeholder="auto"></label>
+            <label>When<input id="rWhen" placeholder="18:00 · tomorrow 9:00 · in 30 minutes"></label>
+            <label>Repeat<select id="rRepeat"><option value="once">Once</option><option value="daily">Every day</option><option value="weekdays">Weekdays</option><option value="weekly">Every week</option><option value="hourly">Every hour</option><option value="every 30 minutes">Every 30 minutes</option></select></label>
+          </div>
+          <div class="row end"><button class="btn-ghost" id="rCancel">Cancel</button><button class="btn" id="rSave">Save</button></div>
+        </div>
+        <div id="routineList"></div>
+      </div>
+    </section>
+
+    <!-- MEMORY -->
+    <section id="view-memory" class="view">
+      <div class="page">
+        <header class="page-head"><div><div class="eyebrow"><svg><use href="#star4s"/></svg>Memory</div><h2>What they know about you</h2><p class="sub">Shared by Astra and Nova and kept up to date as you talk. Click a memory to edit it. Stored only on this PC.</p></div></header>
+        <div class="row"><input id="memInput" class="grow" placeholder="Add something, e.g. I work Mon to Fri, 9 to 5"><button class="btn" id="memAdd">Add</button></div>
+        <div id="memList" class="constellation"></div>
+      </div>
+    </section>
+
+    <!-- ACTIVITY -->
+    <section id="view-activity" class="view">
+      <div class="page">
+        <header class="page-head"><div><div class="eyebrow"><svg><use href="#comet"/></svg>Activity</div><h2>Trail</h2><p class="sub">Messages sent, playlists made, research, email auto replies, routines and Nova's check-ins.</p></div></header>
+        <div id="activityList" class="log glass"></div>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section id="view-settings" class="view">
+      <div class="page settings">
+        <header class="page-head"><div><div class="eyebrow"><svg><use href="#star8"/></svg>Settings</div><h2>Tune AstraNova</h2></div></header>
+        <div class="set-layout">
+        <nav class="tabs">
+          <div class="tgroup">You</div>
+          <button class="tab active" data-tab="profile">Profile</button>
+          <button class="tab" data-tab="context">Personal context</button>
+          <button class="tab" data-tab="look">Appearance</button>
+          <div class="tgroup">Nova &amp; Astra</div>
+          <button class="tab" data-tab="friendset">Nova</button>
+          <button class="tab" data-tab="model">Model</button>
+          <button class="tab" data-tab="voice">Voice</button>
+          <div class="tgroup">Connections</div>
+          <button class="tab" data-tab="email">Email</button>
+          <button class="tab" data-tab="calendar">Calendar</button>
+          <button class="tab" data-tab="apps">Apps</button>
+          <button class="tab" data-tab="accounts">Accounts</button>
+          <button class="tab" data-tab="dcacct">Discord account</button>
+          <button class="tab" data-tab="discord">Discord bot</button>
+          <button class="tab" data-tab="telegram">Telegram</button>
+          <button class="tab" data-tab="phone">iPhone</button>
+          <div class="tgroup">Safety</div>
+          <button class="tab" data-tab="safety">Safety &amp; browser</button>
+          <div class="tgroup">AstraNova</div>
+          <button class="tab" data-tab="about">About</button>
+        </nav>
+        <div class="set-panes">
+
+        <div class="tabpane active" id="tab-profile">
+          <p class="sub">Helps Astra write like you and fill things in. Stored only on this PC.</p>
+          <div class="grid2">
+            <label>What should Astra call you<input data-p="name" placeholder="Alex"></label>
+            <label>Full name<input data-p="full_name"></label>
+            <label>Legal name <span class="muted">private, official forms only</span><input data-p="legal_name"></label>
+            <label>Date of birth <span class="muted">private</span><input data-p="birth_date" placeholder="DD.MM.YYYY"></label>
+            <label>Address <span class="muted">private</span><input data-p="address"></label>
+            <label>Email<input data-p="email"></label>
+            <label>Phone<input data-p="phone"></label>
+            <label>City<input data-p="city"></label>
+            <label>Answers<select id="aStyle"><option value="concise">Short and direct</option><option value="detailed">Detailed when useful</option></select></label>
+          </div>
+          <label>About you <span class="muted">what you do, how you write, anything useful</span><textarea data-p="about" rows="4" placeholder="Student, into music and games. I write short, casual messages."></textarea></label>
+          <label>Never share these <span class="muted">extra names, places or words, comma separated. Bots and Auto-Astra scrub them.</span><input id="privExtra" placeholder="my school, my street, my sister's name"></label>
+          <div class="row"><button class="btn" id="saveProfile">Save</button><button class="btn-ghost" id="openWorkspace">Open my AstraNova folder</button></div>
+        </div>
+
+        <div class="tabpane" id="tab-look">
+          <div class="sublabel">Background</div>
+          <div class="seg" id="bgSeg"><button data-bg="light">Light</button><button data-bg="dark">Dark</button><button data-bg="horizon">Horizon</button></div>
+          <p class="sub small" id="bgNote">Horizon: Astra's light over a moving sea. Uses a little of your graphics card and pauses when AstraNova is hidden.</p>
+          <div class="sublabel">Accent</div>
+          <div class="swatches" id="swatches"></div>
+          <label class="toggle"><input type="checkbox" id="moodAccent"><span></span>Mood accent: colours follow the mood of the conversation</label>
+          <p class="sub small" id="moodNow">Current mood: neutral</p>
+          <div class="moodmap" id="moodMap"></div>
+          <label class="toggle"><input type="checkbox" id="pMoods"><span></span>Let AstraNova invent new moods from how I talk (they get their own colours)</label>
+          <div id="learnedMoods" class="learned-moods"></div>
+          <div class="sublabel">Extras</div>
+          <label class="toggle"><input type="checkbox" id="lWelcome"><span></span>Show the welcome screen when AstraNova opens</label>
+          <label class="toggle"><input type="checkbox" id="lPeek"><span></span>Show what Astra's browser sees while she works</label>
+          <label class="toggle"><input type="checkbox" id="lMotion"><span></span>Calm mode (fewer animations)</label>
+        </div>
+
+        <div class="tabpane" id="tab-context">
+          <p class="sub">Everything Astra and Nova should know about you, in your own words. Import from ChatGPT (Settings > Data controls > Export, then pick <code>conversations.json</code>), Claude, Gemini or any notes. Astra keeps it up to date when things change.</p>
+          <textarea id="ctxText" rows="18" class="mono" placeholder="## About me&#10;- ...&#10;&#10;## Music&#10;- ...&#10;&#10;## People&#10;- alex: best friend from ..."></textarea>
+          <div class="row"><button class="btn" id="ctxSave">Save</button><button class="btn-ghost" id="ctxImport">Import a file</button><span id="ctxStatus" class="muted small"></span></div>
+        </div>
+
+        <div class="tabpane" id="tab-voice">
+          <p class="sub">Spoken replies. Runs on your CPU, so it doesn't fight the language model for your GPU.</p>
+          <label class="toggle"><input type="checkbox" id="vOn"><span></span>Speak replies out loud</label>
+          <label class="toggle"><input type="checkbox" id="vAstra"><span></span>Astra speaks</label>
+          <label class="toggle"><input type="checkbox" id="vFriend"><span></span>Your friend speaks</label>
+          <div class="grid2">
+            <label>Engine<select id="vEngine"><option value="windows">Windows voices (instant)</option><option value="piper">Piper (natural, ~60 MB per voice)</option></select></label>
+            <label>Voice<select id="vVoice"></select></label>
+            <label>Speed (Windows voices)<input id="vRate" type="number" min="-10" max="10" step="1"></label>
+          </div>
+          <div class="sublabel">Speech to text <span class="muted">the microphone button next to the message box, or Ctrl+M</span></div>
+          <div class="grid2">
+            <label>How<select id="sttEngine"><option value="windows">Windows voice typing (instant, words appear live, online)</option><option value="whisper">Whisper on this PC (private, nothing leaves your PC)</option></select></label>
+            <label>Whisper model<select id="sttModel"><option value="base">Base: fast (60 MB)</option><option value="small">Small: more accurate (190 MB)</option></select></label>
+          </div>
+          <label class="toggle"><input type="checkbox" id="sttSend"><span></span>Send automatically when I stop talking (Whisper)</label>
+          <div class="row"><button class="btn-ghost" id="sttGet">Download Whisper now</button></div>
+          <div class="row"><button class="btn" id="vSave">Save</button><button class="btn-ghost" id="vGet">Download voice</button><button class="btn-ghost" id="vTest">Test</button><button class="btn-ghost" id="vStop">Stop speaking</button></div>
+        </div>
+
+        <div class="tabpane" id="tab-accounts">
+          <p class="sub">Accounts Astra can use for you. Social media logins were removed on purpose: automated logins can get accounts locked.</p>
+          <div class="appcard glass">
+            <div class="ach"><b>University</b><span id="uniStatus" class="pill">-</span></div>
+            <div class="grid2">
+              <label>Type<select id="uniProv"><option value="moodle">Moodle</option><option value="canvas">Canvas</option><option value="browser">Other portal (browser)</option></select></label>
+              <label>Portal URL<input id="uniUrl" placeholder="https://moodle.your-uni.edu"></label>
+              <label>Username <span class="muted">Moodle</span><input id="uniUser"></label>
+              <label>Password <span class="muted">Moodle</span><input id="uniPass" type="password"></label>
+              <label>Access token <span class="muted">Canvas</span><input id="uniToken" type="password"></label>
+            </div>
+            <div class="row"><button class="btn" id="uniSave">Save</button><button class="btn-ghost" id="uniTest">Test</button><span id="uniOut" class="muted small"></span></div>
+          </div>
+        </div>
+
+        <div class="tabpane" id="tab-dcacct">
+          <div class="status-card glass"><span class="dot" id="daDot"></span><div><b id="daHead">Not connected</b><small id="daSub">Log in once. Astra then uses Discord in a hidden window, so it never takes over your screen.</small></div></div>
+          <div class="row"><button class="btn" id="daLogin">Log in to Discord</button><button class="btn-ghost hidden" id="daLogout">Log out</button></div>
+          <p class="warn small">Heads up: Discord's terms don't allow automating user accounts. Astra behaves like a person typing and only acts when you ask (or Auto-Astra is on), but there is a risk of account action. Your call.</p>
+          <div class="sublabel">Rich Presence</div>
+          <label class="toggle"><input type="checkbox" id="rpOn"><span></span>Show "Talking to Astra / Nova" on my Discord profile while I'm in AstraNova (no timer)</label>
+          <label>Application ID <span class="muted">from discord.com/developers (your bot's app works). Under Rich Presence > Art Assets, upload the 1024×1024 image named "astra".</span><input id="rpId" placeholder="e.g. 1290000000000000000"></label>
+          <div class="row"><button class="btn-ghost sm" id="rpImg">Show the 1024×1024 image</button></div>
+          <p class="sub small" id="rpErr"></p>
+          <div class="sublabel">Auto-Astra</div>
+          <p class="sub small">While on, Astra answers DMs for you in your style. She never makes plans or promises, never shares private details, and pings you when someone needs the real you.</p>
+          <label class="toggle"><input type="checkbox" id="aaOn"><span></span>Auto-Astra is on</label>
+          <div class="grid2">
+            <label>Who<select id="aaWho"><option value="allowlist">Only these people</option><option value="everyone">Everyone who DMs me</option></select></label>
+            <label>People <span class="muted">comma separated</span><input id="aaAllow" placeholder="alex, sam"></label>
+            <label>Check every (seconds)<input id="aaEvery" type="number" min="20" step="5"></label>
+          </div>
+          <label>How I write <span class="muted">optional</span><input id="aaStyle" placeholder="lowercase, short, lots of 'lol', no punctuation"></label>
+          <label class="toggle"><input type="checkbox" id="aaDisclose"><span></span>Add "(astra)" to auto replies so people know</label>
+          <div class="row"><button class="btn" id="aaSave">Save</button></div>
+          <div id="aaLog" class="log glass small"></div>
+        </div>
+
+        <div class="tabpane" id="tab-telegram">
+          <div class="status-card glass"><span class="dot" id="tgDot"></span><div><b id="tgHead">Not connected</b><small id="tgSub">Your friend on Telegram. /menu turns it into Astra for PC tasks and games.</small></div></div>
+          <ol class="steps">
+            <li>In Telegram open <b>@BotFather</b>, send <code>/newbot</code>, pick a name. Copy the token.</li>
+            <li>Paste it here and press <b>Connect</b>, then tap the link and press <b>Start</b>.</li>
+          </ol>
+          <div class="grid2"><label>Bot token<input id="tgToken" type="password" placeholder="123456789:AAH..."></label><label>Only answer this Telegram username<input id="tgOwner" placeholder="Alex"></label></div>
+          <div class="row"><button class="btn" id="tgConnect">Connect</button><button class="btn-ghost" id="tgTest">Send test</button><button class="btn-ghost hidden" id="tgDisconnect">Disconnect</button></div>
+          <div id="tgLinkBox" class="callout hidden"><span>Open this and press Start:</span><a id="tgLink" href="#"></a></div>
+          <p class="sub small">Commands: /menu, /friend, /astra, /play &lt;game&gt;, /games, /status, /stop.</p>
+        </div>
+
+        <div class="tabpane" id="tab-model">
+          <div class="seg" id="providerSeg"><button data-prov="ollama">Local (your GPU)</button><button data-prov="openai">Cloud API</button></div>
+          <div id="localModel">
+            <p class="sub">Runs on your graphics card. Nothing leaves your PC.</p>
+            <div class="status-card glass"><span class="dot on"></span><div><b id="gpuHead">Your graphics card</b><small id="gpuSub">Checking</small></div><button class="btn-ghost sm" id="mBest">Use the best for my GPU</button></div>
+            <div class="sublabel">Language model</div>
+            <div id="modelList"></div>
+            <div class="sublabel">Screen vision <span class="muted">used when an app has no readable buttons</span></div>
+            <div id="visionList"></div>
+            <div id="modelProgress" class="progress hidden"><div></div></div>
+            <div class="sublabel">Downloaded models <span class="muted">on this PC's disk</span></div>
+            <div id="localModels" class="localmodels"><p class="sub small">Loading</p></div>
+            <div class="row"><button class="btn-ghost" id="mClean">Delete unused models</button></div>
+            <label>Free the graphics card when idle<select id="mKeep"><option value="2m">After 2 minutes (best for gaming)</option><option value="10m">After 10 minutes (recommended)</option><option value="30m">After 30 minutes</option><option value="always">Keep the model loaded (fastest replies)</option></select></label>
+            <label class="toggle"><input type="checkbox" id="mThink"><span></span>Deep reasoning (slower, better for complex tasks)</label>
+            <div class="grid2">
+              <label>Normal context<select id="mCtx"><option value="8192">8K - small GPUs</option><option value="12288">12K - 8 GB GPUs</option><option value="16384">16K - fastest</option><option value="24576">24K - recommended</option><option value="32768">32K - more VRAM</option></select></label>
+              <label>Grow automatically up to<select id="mMaxCtx"><option value="0">Don't grow</option><option value="16384">16K - 8 GB GPUs</option><option value="24576">24K - 12 GB GPUs</option><option value="32768">32K</option><option value="49152">48K - recommended for 16 GB</option><option value="65536">64K - needs more VRAM</option><option value="131072">128K - big GPUs only</option></select></label>
+            </div>
+            <p class="sub small">Big jobs and long chats switch to a bigger context on their own and go back afterwards. Long chats are also summarized, so nothing important is forgotten.</p>
+          </div>
+          <div id="cloudModel" class="hidden">
+            <p class="sub">Use a bigger model through any OpenAI-compatible API for extra intelligence. Task messages and screenshots go to that provider.</p>
+            <div class="grid2">
+              <label>Provider<select id="cPreset"><option value="https://api.openai.com/v1">OpenAI</option><option value="https://openrouter.ai/api/v1">OpenRouter</option><option value="https://api.groq.com/openai/v1">Groq</option><option value="http://127.0.0.1:1234/v1">LM Studio (local)</option><option value="custom">Custom</option></select></label>
+              <label>API base URL<input id="cBase"></label>
+              <label>Model<input id="cModel" placeholder="gpt-4.1-mini"></label>
+              <label>Vision model <span class="muted">empty = same</span><input id="cVision"></label>
+            </div>
+            <label>API key<input id="cKey" type="password" placeholder="sk-..."></label>
+            <div class="row"><button class="btn" id="cSave">Save</button><button class="btn-ghost" id="cTest">Test</button><span id="cStatus" class="muted small"></span></div>
+          </div>
+        </div>
+
+        <div class="tabpane" id="tab-apps">
+          <p class="sub">Astra can operate any app in the background. These connections make the common ones fast and precise.</p>
+          <div class="appcard glass">
+            <div class="ach"><b>Spotify</b><span id="spStatus" class="pill">Not connected</span></div>
+            <ol class="steps">
+              <li>Open <a href="https://developer.spotify.com/dashboard">developer.spotify.com/dashboard</a>, log in, <b>Create app</b>, tick <b>Web API</b>.</li>
+              <li>Add this Redirect URI: <code id="spRedirect"></code></li>
+              <li>Copy the <b>Client ID</b> here and press Connect. Approve in the browser.</li>
+            </ol>
+            <div class="row"><input id="spClient" class="grow" placeholder="Client ID"><button class="btn" id="spConnect">Connect</button><button class="btn-ghost hidden" id="spDisconnect">Disconnect</button></div>
+          </div>
+          <div class="appcard glass">
+            <div class="ach"><b>Apple Music</b><span class="pill">Through the app</span></div>
+            <p class="sub small">Apple has no Windows API, so Astra operates the Apple Music app directly.</p>
+            <label>Music app Astra uses by default<select id="musicService"><option value="spotify">Spotify</option><option value="apple_music">Apple Music</option></select></label>
+          </div>
+          <div class="row"><button class="btn" id="saveApps">Save</button><span id="appOut" class="muted small"></span></div>
+          <details class="more"><summary>App playbooks <span class="muted">(tips Astra follows per app - edit to teach it your setup)</span></summary>
+            <div class="row"><select id="pbSelect" class="grow"></select></div>
+            <textarea id="pbText" rows="10" class="mono"></textarea>
+            <div class="row"><button class="btn" id="pbSave">Save playbook</button><button class="btn-ghost" id="pbReset">Reset to default</button></div>
+          </details>
+        </div>
+
+        <div class="tabpane" id="tab-discord">
+          <div class="status-card glass"><span class="dot" id="dcDot"></span><div><b id="dcHead">Off</b><small id="dcSub">Run Astra as a Discord bot. Optional.</small></div></div>
+          <ol class="steps">
+            <li>Open <a href="https://discord.com/developers/applications">discord.com/developers/applications</a> › <b>New Application</b> (name it Astra).</li>
+            <li><b>Bot</b> tab › <b>Reset Token</b> › copy it. Turn on <b>Message Content Intent</b> on the same page.</li>
+            <li>Paste the token here, switch the bot on, press <b>Save &amp; connect</b>.</li>
+            <li>Add the bot to your server with the invite link, press <b>Pair</b> and DM the bot the code.</li>
+          </ol>
+          <label>Bot token<input id="dcToken" type="password" placeholder="paste token"></label>
+          <label class="toggle"><input type="checkbox" id="dcEnabled"><span></span>Bot is on</label>
+          <div class="row"><button class="btn" id="dcConnect">Save &amp; connect</button><button class="btn-ghost" id="dcPair">Pair</button><button class="btn-ghost" id="dcTest">Send test DM</button><button class="btn-ghost hidden" id="dcUnpair">Unpair</button></div>
+          <div id="dcInvite" class="callout hidden"><span>Add the bot to your server:</span><a id="dcInviteLink" href="#"></a></div>
+          <div id="dcCode" class="callout hidden"><span>DM your bot exactly this (valid 10 minutes):</span><b class="code" id="dcCodeText"></b></div>
+          <div class="sublabel">How it behaves</div>
+          <p class="sub small">The bot is always Nova. Nobody gets PC control through Discord. With other people it has no memories and every reply is scrubbed for personal details.</p>
+          <label>Your Discord username <span class="muted">only this account can launch games ("play bg3")</span><input id="dcOwnerName" placeholder="Alex"></label>
+          <label class="toggle"><input type="checkbox" id="dcServers"><span></span>Answer when @mentioned in servers</label>
+          <label>Other people<select id="dcOthers"><option value="friend">Talk to them as Nova</option><option value="off">Ignore them</option></select></label>
+          <label class="toggle"><input type="checkbox" id="dcApprovals"><span></span>Send approvals to my DMs</label>
+          <label class="toggle"><input type="checkbox" id="dcUpdates"><span></span>DM me when a longer task finishes</label>
+          <div class="row"><button class="btn" id="dcSaveOpts">Save</button></div>
+          <p class="sub small">Other people never get access to your PC, files, accounts or memory.</p>
+          <div class="sublabel">In your DMs with friends</div>
+          <p class="sub small">Add the bot to your own Discord account once. Then, in any DM or group chat, type <b id="dcCmd">/nova</b> and a message: she answers right there in the chat for everyone to see, in public mode (no memories, nothing personal, no PC). People can also DM the bot directly to chat with her.</p>
+          <div id="dcUser" class="callout hidden"><span>Add to your account:</span><a id="dcUserLink" href="#"></a></div>
+          <p class="sub small">If the command doesn't show up: in the Developer Portal open your app › <b>Installation</b>, tick <b>User Install</b>, add the <b>applications.commands</b> scope, save, then use the link again. Discord can take a few minutes to show new commands.</p>
+        </div>
+
+        <div class="tabpane" id="tab-friendset">
+          <div class="grid2"><label>Name<input id="fName"></label><div></div></div>
+          <label>Personality <span class="muted">who she is, what she's into</span><textarea id="fPersona" rows="5"></textarea></label>
+          <label class="toggle"><input type="checkbox" id="fGenz"><span></span>Texts like someone in their early 20s: lowercase, no periods, no emojis (always, no matter what the model writes)</label>
+          <label class="toggle"><input type="checkbox" id="fHandoff"><span></span>Hands jobs to Astra automatically (Astra works inside Nova's chat, Nova tells you the result)</label>
+          <label class="toggle"><input type="checkbox" id="fMemory"><span></span>Remember things from chats automatically</label>
+          <label class="toggle"><input type="checkbox" id="fEvents"><span></span>Put plans with a day or time into the calendar automatically</label>
+          <div class="sublabel">Texting first</div>
+          <label class="toggle"><input type="checkbox" id="fProactive"><span></span>Nova can message you first: calendar heads-ups, important mail, asking about your day</label>
+          <div class="grid3">
+            <label>How often<select id="fLevel"><option value="rare">Rarely (about once a day)</option><option value="normal">Sometimes (up to 3 a day)</option><option value="often">Often (up to 5 a day)</option></select></label>
+            <label>Quiet from<input id="fQuietA" type="time"></label>
+            <label>Quiet until<input id="fQuietB" type="time"></label>
+          </div>
+          <label class="toggle"><input type="checkbox" id="fDiscord"><span></span>Also send her messages to my Discord DMs (needs the Discord bot)</label>
+          <div class="row"><button class="btn" id="fSave">Save</button></div>
+          <div class="sublabel">Growing with you</div>
+          <label class="toggle"><input type="checkbox" id="pAdapt"><span></span>Nova adapts to how I talk (learns your texting style and what kind of replies you like, every few hours)</label>
+          <div class="learned glass"><b>What she's learned</b><p id="pStyle" class="sub small">Nothing yet. She learns after you've chatted a bit.</p></div>
+          <div class="row"><button class="btn-ghost" id="pLearn">Learn now</button><button class="btn-ghost" id="pForgetStyle">Forget it</button></div>
+          <p class="sub small">Only how you talk is learned here, never facts about your life (those are in Memory).</p>
+        </div>
+
+        <div class="tabpane" id="tab-about">
+          <div class="about glass">
+            <div class="about-mark"><svg><use href="#flare"/></svg></div>
+            <div class="about-name">ASTRANOVA</div>
+            <div class="about-ver" id="aboutVer"></div>
+            <p class="about-line">Astra gets things done, Nova is your friend. Everything runs on your own PC.</p>
+            <p class="about-love">Made with love by <a href="https://aixeni.xyz/">AIXENI</a></p>
+            <a class="btn-ghost" href="https://aixeni.xyz/">aixeni.xyz</a>
+          </div>
+          <div class="upd glass hidden" id="updBox">
+            <label class="toggle"><input type="checkbox" id="updAuto"><span></span>Keep AstraNova up to date on its own (new versions download in the background and go in when you close it)</label>
+            <div class="upd-row"><span id="updLine" class="muted">Up to date</span>
+              <button class="btn-ghost" id="updCheck">Check now</button>
+              <button class="btn hidden" id="updGo">Restart to update</button></div>
+          </div>
+        </div>
+
+        <div class="tabpane" id="tab-safety">
+          <label class="toggle"><input type="checkbox" id="sBg"><span></span>Work in the background: never take over my screen without asking</label>
+          <label class="toggle"><input type="checkbox" id="sDisk"><span></span>Full disk access (all drives; private folders like browser profiles and password managers stay blocked)</label>
+          <label class="toggle"><input type="checkbox" id="sControl"><span></span>Allow Astra to operate apps on this PC</label>
+          <label class="toggle"><input type="checkbox" id="sMsg"><span></span>Ask before sending any message</label>
+          <label class="toggle"><input type="checkbox" id="sCmd"><span></span>Ask before running commands</label>
+          <label class="toggle"><input type="checkbox" id="sFiles"><span></span>Ask before overwriting files</label>
+          <label class="toggle"><input type="checkbox" id="sEmail"><span></span>Ask before sending email</label>
+          <label class="toggle"><input type="checkbox" id="sHotkey"><span></span>Ctrl+Alt+X stops everything (restart to apply)</label>
+          <label>Never touch these apps <span class="muted">comma separated, matched against window titles</span><input id="sBlocked"></label>
+          <div class="sublabel">Astra's browser</div>
+          <label class="toggle"><input type="checkbox" id="bHeadless"><span></span>Keep the browser hidden (it only shows up if Astra asks and you say yes, e.g. for a CAPTCHA)</label>
+          <label>Cookie banners<select id="bCookies"><option value="decline">Decline them (accept only if there's no other way in)</option><option value="accept">Accept them</option><option value="off">Leave them alone</option></select></label>
+          <label>Extensions folder <span class="muted">optional: unpacked extensions (folders with manifest.json), e.g. an ad blocker</span><span class="pair"><input id="bExt" placeholder="none"><button class="btn-ghost" id="bExtPick">Choose</button></span></label>
+          <div class="row"><button class="btn" id="saveSafety">Save</button><button class="btn-ghost" id="reindex">Rebuild file index</button><button class="btn-ghost" id="openData">Open data folder</button></div>
+          <div class="danger glass">
+            <div><b>Start over</b><small>Deletes everything AstraNova knows and every connection, then starts fresh like a new install.</small></div>
+            <button class="btn-danger" id="resetOpen">Reset AstraNova</button>
+          </div>
+        </div>
+
+        <div class="tabpane" id="tab-email">
+          <p class="sub">Add as many accounts as you like. Google accounts: turn on 2-step verification, then create an app password at myaccount.google.com/apppasswords and paste it here (not your normal password).</p>
+          <div id="mailAccounts"></div>
+          <button class="btn-ghost" id="mailAdd">Add account</button>
+          <div id="mailForm" class="card glass hidden">
+            <input type="hidden" id="maId">
+            <div class="grid2">
+              <label>Name for this account<input id="maLabel" placeholder="Uni, Personal, Commissions..."></label>
+              <label>Email address<input id="maAddress"></label>
+              <label>App password<input id="maPassword" type="password"></label>
+              <label>Login name <span class="muted">if different</span><input id="maUser"></label>
+              <label>IMAP server<input id="maImap"></label>
+              <label>SMTP server and port<span class="pair"><input id="maSmtp"><input id="maPort" class="port"></span></label>
+            </div>
+            <label class="toggle"><input type="checkbox" id="maWatch" checked><span></span>Watch this inbox (sort new mail, tell me about important ones)</label>
+            <label>Always important <span class="muted">senders, domains or words, comma separated</span><input id="maImportant" placeholder="@univie.ac.at, moodle, exam, professor"></label>
+            <div class="row end"><span id="maStatus" class="muted small grow"></span><button class="btn-ghost" id="maCancel">Cancel</button><button class="btn-ghost" id="maTest">Test</button><button class="btn" id="maSave">Save account</button></div>
+          </div>
+          <div class="sublabel">Inbox watcher</div>
+          <div class="grid2">
+            <label>Check every<select id="mEvery"><option value="5">5 minutes</option><option value="10">10 minutes</option><option value="30">30 minutes</option><option value="60">hour</option></select></label>
+            <div></div>
+          </div>
+          <label class="toggle"><input type="checkbox" id="mNotify"><span></span>Nova tells me about important mail (uni, real people, deadlines)</label>
+          <div class="sublabel">Filter</div>
+          <label class="toggle"><input type="checkbox" id="fOnly"><span></span>Only show me important mail when I ask about my inbox</label>
+          <p class="sub small" style="margin:4px 0 8px">Never show or announce these:</p>
+          <div class="chipset" id="fHide"></div>
+          <div class="grid2">
+            <label>Always important <span class="muted">senders or words, one per line</span><textarea id="fAlways" rows="3" placeholder="@myuni.edu&#10;professor&#10;invoice"></textarea></label>
+            <label>Always ignore <span class="muted">senders or words, one per line</span><textarea id="fNever" rows="3" placeholder="@marketing.example.com&#10;webinar"></textarea></label>
+          </div>
+          <div class="sublabel">Auto reply</div>
+          <label class="toggle"><input type="checkbox" id="mAuto"><span></span>Reply automatically to proposals, commissions, collaborations and bookings</label>
+          <label>Reply text <span class="muted">{name} = their first name, {owner} = your name</span><textarea id="mAutoText" rows="5"></textarea></label>
+          <label>Never auto-reply to <span class="muted">one address or @domain per line</span><textarea id="mBlacklist" rows="3" placeholder="spammy@agency.com&#10;@promo-network.net"></textarea></label>
+          <div class="row"><button class="btn" id="saveMail">Save</button><button class="btn-ghost" id="checkMail">Check mail now</button></div>
+          <details class="more"><summary>Recently sorted mail</summary><div id="mailLog" class="log glass"></div></details>
+        </div>
+
+        <div class="tabpane" id="tab-calendar">
+          <p class="sub">Import your calendars so Nova and Astra know your day. Google Calendar: Settings › your calendar › Integrate calendar › <b>Secret address in iCal format</b>. Outlook: Settings › Calendar › Shared calendars › Publish › ICS link. Or pick an .ics file.</p>
+          <div id="calSources"></div>
+          <div class="row"><input id="calName" placeholder="Name (Uni, Work...)"><input id="calUrl" class="grow" placeholder="https://calendar.google.com/calendar/ical/.../basic.ics"><button class="btn-ghost" id="calPick">Pick .ics file</button><button class="btn" id="calAdd">Add</button></div>
+          <label>Remind me before events<select id="calRemind"><option value="10">10 minutes</option><option value="30">30 minutes</option><option value="60">1 hour</option></select></label>
+        </div>
+
+        <div class="tabpane" id="tab-phone">
+          <p class="sub">Use AstraNova on your iPhone: chat with Nova, watch Astra's jobs and approve things from anywhere. Your PC does the work; the phone connects to it through a secure Cloudflare link.</p>
+          <label class="toggle"><input type="checkbox" id="phOn"><span></span>Phone link is on</label>
+          <label class="toggle"><input type="checkbox" id="phTunnel"><span></span>Reachable from anywhere (Cloudflare tunnel, downloads a small helper once)</label>
+          <label class="toggle"><input type="checkbox" id="phLan"><span></span>Also reachable on home Wi-Fi without the tunnel</label>
+          <div class="status-card glass"><span class="dot" id="phDot"></span><div><b id="phHead">Off</b><small id="phSub">Turn it on, then scan the code with your iPhone camera.</small></div></div>
+          <div id="phBox" class="phone-box hidden">
+            <div id="phQr" class="qr"></div>
+            <div class="phone-steps">
+              <ol class="steps">
+                <li>Scan the code with the iPhone camera, or open the link in Safari.</li>
+                <li>Tap Share › <b>Add to Home Screen</b>. AstraNova now opens like an app.</li>
+                <li>The link changes when AstraNova restarts. With the Discord bot paired, the new link is sent to your DMs automatically.</li>
+              </ol>
+              <div class="row"><button class="btn-ghost sm" id="phCopy">Copy link</button><button class="btn-ghost sm" id="phDm">Send link to my Discord</button><button class="btn-ghost sm" id="phNewKey">New secret key</button></div>
+            </div>
+          </div>
+        </div>
+
+        </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- START OVER -->
+<div id="resetDlg" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="resetTitle">
+  <div class="reset-card glass">
+    <div class="warn-tag">This can't be undone</div>
+    <h2 id="resetTitle">Delete everything and start over?</h2>
+    <p class="sub">AstraNova goes back to how it was on the very first start. This deletes:</p>
+    <ul class="gone-list">
+      <li>Every chat with Astra and Nova, all tasks and routines</li>
+      <li>Everything they remember about you, and your personal context</li>
+      <li>Your calendar, email accounts and their passwords, mail history</li>
+      <li>Discord, Telegram, Spotify, phone link and browser logins</li>
+      <li>All settings, including your name and appearance</li>
+    </ul>
+    <p class="sub small">Kept: downloaded AI models and voices, so starting again is quick.</p>
+    <label class="toggle"><input type="checkbox" id="resetWs"><span></span>Also delete the files Astra saved in Documents\AstraNova</label>
+    <label><span>Type <b>DELETE</b> to confirm</span><input id="resetPhrase" autocomplete="off" spellcheck="false" placeholder="DELETE"></label>
+    <div class="row"><button class="btn-danger" id="resetGo" disabled>Delete everything</button><button class="btn-ghost" id="resetCancel">Keep everything</button></div>
+  </div>
+</div>
+<div id="resetFx" class="reset-fx hidden" aria-hidden="true"><div class="rfx-flare"><svg><use href="#flare"/></svg></div><div class="rfx-text" id="resetFxText"></div></div>
+
+<!-- WELCOME -->
+<div id="welcome" class="overlay hidden">
+  <div class="welcome glass">
+    <div class="flare-wrap big" id="wEmblem"></div>
+    <div class="wdate" id="wDate"></div>
+    <h1 id="wHello">Hi.</h1>
+    <div id="wOnboard" class="onboard hidden">
+      <label>What should Nova and Astra call you?<input id="wName" placeholder="Your name or nickname"></label>
+    </div>
+    <ul id="wToday" class="wtoday"></ul>
+    <p id="wNova" class="wnova hidden"></p>
+    <div class="wactions">
+      <button class="btn" id="wNovaBtn">Talk to Nova</button>
+      <button class="btn-ghost" id="wAstraBtn">Give Astra a task</button>
+    </div>
+    <label class="toggle small"><input type="checkbox" id="wShow" checked><span></span>Show this when AstraNova opens</label>
+  </div>
+</div>
+
+<!-- SETUP -->
+<div id="setup" class="overlay hidden">
+  <div class="setup-card glass">
+    <div class="flare-wrap small" id="setupDrop"></div>
+    <div class="brand big"><span>ASTRANOVA</span></div>
+    <p class="sub">First start. AstraNova installs a local AI model that runs on your graphics card. A few minutes, once.</p>
+    <div class="setup-steps">
+      <div class="sstep" data-step="engine"><span class="ind"><svg><use href="#star4"/></svg></span><div><b>AI engine</b><small>Ollama</small></div><em>Waiting</em></div>
+      <div class="sstep" data-step="model"><span class="ind"><svg><use href="#star4"/></svg></span><div><b>Language model</b><small id="setupModelName">Qwen3 14B, about 9 GB</small></div><em>Waiting</em></div>
+      <div class="sstep" data-step="vision"><span class="ind"><svg><use href="#star4"/></svg></span><div><b>Screen vision</b><small id="setupVisionName">Qwen2.5-VL 7B, about 6 GB</small></div><em>Waiting</em></div>
+      <div class="sstep" data-step="browser"><span class="ind"><svg><use href="#star4"/></svg></span><div><b>Browser</b><small>Microsoft Edge</small></div><em>Waiting</em></div>
+    </div>
+    <div id="setupBar" class="progress"><div></div></div>
+    <p id="setupError" class="error hidden"></p>
+    <button id="setupStart" class="btn wide">Install and start</button>
+    <details class="more setup-cloud"><summary>Use a cloud API instead (no download)</summary>
+      <label>API base URL<input id="sCloudBase" value="https://api.openai.com/v1"></label>
+      <label>Model<input id="sCloudModel" value="gpt-4.1-mini"></label>
+      <label>API key<input id="sCloudKey" type="password"></label>
+      <button class="btn-ghost wide" id="sCloudGo">Use cloud and continue</button>
+    </details>
+  </div>
+</div>
+
+<script src="sky.js?v=2.5.0"></script>
+<script src="horizon.js?v=2.5.0"></script>
+<script src="app.js?v=2.5.0"></script>
+</body>
+</html>

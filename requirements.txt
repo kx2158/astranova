@@ -1,0 +1,16 @@
+pywebview>=5.3
+playwright>=1.47
+requests>=2.31
+beautifulsoup4>=4.12
+keyring>=25.0
+pywinauto>=0.6.9; sys_platform == "win32"
+comtypes>=1.4; sys_platform == "win32"
+pyperclip>=1.9
+mss>=9.0
+Pillow>=10.4
+psutil>=6.0
+discord.py>=2.4
+spotipy>=2.24
+pypdf>=4.0
+tzdata>=2024.1
+sounddevice>=0.4.6
